@@ -1,0 +1,26 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="16"
+  height="16"
+  viewBox="0 0 16 16"
+>
+  <!-- 白い円 -->
+  <circle
+    cx="8"
+    cy="8"
+    r="7"
+    fill="#FFFFFF"
+  />
+
+  <!-- 黒い「？」 -->
+  <text
+    x="8"
+    y="11"
+    text-anchor="middle"
+    font-family="Segoe UI, system-ui, -apple-system, sans-serif"
+    font-size="8"
+    fill="#000000"
+  >
+    ?
+  </text>
+</svg>

@@ -1,0 +1,136 @@
+{
+  "name": "inline-markers",
+  "displayName": "Inline Markers",
+  "version": "0.0.1",
+  "description": "",
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "pnpm run check && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch",
+    "package": "pnpm run check && node esbuild.js --production",
+    "check": "oxlint --type-aware --type-check",
+    "lint": "oxlint --type-aware",
+    "fmt": "oxfmt",
+    "test": "vscode-test",
+    "pretest": "pnpm run check"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "@types/vscode": "^1.115.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.27.3",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^17.24.0",
+    "npm-run-all": "^4.1.5",
+    "oxfmt": "^0.44.0",
+    "oxlint": "^1.59.0",
+    "oxlint-tsgolint": "^0.20.0",
+    "typescript": "^6.0.3"
+  },
+  "contributes": {
+    "configuration": {
+      "title": "Inline Markers",
+      "properties": {
+        "inline-markers.gutter.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable diagnostic gutter icons."
+        },
+        "inline-markers.diagnosticLine.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable diagnostic line messages."
+        },
+        "inline-markers.diagnosticLine.errorLabelBg": {
+          "type": "string",
+          "default": "#d32f2f88",
+          "description": "Background color for error diagnostic lines."
+        },
+        "inline-markers.diagnosticLine.warnLabelBg": {
+          "type": "string",
+          "default": "#ff980088",
+          "description": "Background color for warning diagnostic lines."
+        },
+        "inline-markers.diagnosticLine.errFontColor": {
+          "type": "string",
+          "default": "#efefef",
+          "description": "Text color for error diagnostic lines."
+        },
+        "inline-markers.diagnosticLine.warnFontColor": {
+          "type": "string",
+          "default": "#000000",
+          "description": "Text color for warning diagnostic lines."
+        },
+        "inline-markers.diagnosticLine.maxLineLength": {
+          "type": "number",
+          "default": 120,
+          "description": "Maximum length of diagnostic messages."
+        },
+        "inline-markers.comments.todo.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable TODO comment tags."
+        },
+        "inline-markers.comments.todo.color": {
+          "type": "string",
+          "default": "#FF8C00",
+          "description": "Color for TODO comment tags."
+        },
+        "inline-markers.comments.fixme.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable FIXME comment tags."
+        },
+        "inline-markers.comments.fixme.color": {
+          "type": "string",
+          "default": "#FFB6C1",
+          "description": "Color for FIXME comment tags."
+        },
+        "inline-markers.comments.important.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable IMPORTANT comment tags."
+        },
+        "inline-markers.comments.important.color": {
+          "type": "string",
+          "default": "#FF2D00",
+          "description": "Color for IMPORTANT comment tags."
+        },
+        "inline-markers.comments.question.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable QUESTION comment tags."
+        },
+        "inline-markers.comments.question.color": {
+          "type": "string",
+          "default": "#3498DB",
+          "description": "Color for QUESTION comment tags."
+        },
+        "inline-markers.comments.highlight.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable HIGHLIGHT comment tags."
+        },
+        "inline-markers.comments.highlight.color": {
+          "type": "string",
+          "default": "#98C379",
+          "description": "Color for HIGHLIGHT comment tags."
+        }
+      }
+    }
+  },
+  "activationEvents": [
+    "onLanguage"
+  ],
+  "engines": {
+    "vscode": "^1.115.0"
+  }
+}

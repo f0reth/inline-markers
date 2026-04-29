@@ -1,0 +1,155 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "node"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "ignorePatterns": ["dist", "node_modules", "esbuild.js"],
+  "env": {
+    "esnext": true,
+    "node": true
+  },
+  "options": {
+    "typeCheck": true,
+    "typeAware": true
+  },
+  // https://oxc.rs/docs/guide/usage/linter/rules.html
+  "rules": {
+    "constructor-super": "error", // 派生クラスのコンストラクタでのsuper()呼び出しを強制
+    "for-direction": "error", // forループの更新式が正しい方向であることを強制
+    "import/no-cycle": "error", // 循環参照を禁止
+    "import/no-self-import": "error", // 自己インポートを禁止
+    "max-depth": "off", // ネストの最大深さ制限（現在はoff）
+    "max-lines": "off", // ファイルの最大行数制限（現在はoff）
+    "no-async-promise-executor": "error", // Promiseコンストラクタにasync関数を渡すことを禁止
+    "no-caller": "error", // arguments.callerやarguments.calleeの使用を禁止
+    "no-compare-neg-zero": "error", // -0との比較を禁止
+    "no-cond-assign": "error", // 条件式での代入演算子を禁止
+    "no-console": "off", // consoleの使用を禁止（現在はoff）
+    "no-const-assign": "off", // TypeScriptが検知するため不要
+    "no-constant-binary-expression": "error", // 常に結果が固定されるバイナリ式を禁止
+    "no-constant-condition": "error", // 条件式に定数を使用することを禁止
+    "no-control-regex": "error", // 正規表現内での制御文字の使用を禁止
+    "no-debugger": "error", // debugger文の使用を禁止
+    "no-delete-var": "error", // 変数に対するdelete演算を禁止
+    "no-dupe-class-members": "off", // TypeScriptが検知するため不要
+    "no-dupe-else-if": "error", // else if内の重複した条件を禁止
+    "no-dupe-keys": "error", // オブジェクトリテラル内の重複キーを禁止
+    "no-duplicate-case": "error", // switch文内の重複caseを禁止
+    "no-empty-character-class": "error", // 正規表現内の空の文字クラスを禁止
+    "no-empty-pattern": "error", // 空の分割代入パターンを禁止
+    "no-empty-static-block": "error", // 空のstaticブロックを禁止
+    "no-eval": "error", // eval()の使用を禁止
+    "no-ex-assign": "error", // catch節での例外変数への再代入を禁止
+    "no-extra-boolean-cast": "error", // 不要なブール値へのキャストを禁止
+    "no-func-assign": "error", // 関数宣言への再代入を禁止
+    "no-global-assign": "error", // グローバル変数への代入を禁止
+    "no-import-assign": "off", // TypeScriptが検知するため不要
+    "no-invalid-regexp": "error", // 不正な正規表現を禁止
+    "no-irregular-whitespace": "error", // 不規則な空白文字を禁止
+    "no-iterator": "error", // __iterator__プロパティの使用を禁止
+    "no-loss-of-precision": "error", // 数値リテラルの精度低下を禁止
+    "no-magic-numbers": "off", // マジックナンバーの使用を禁止（現在はoff）
+    "no-misleading-character-class": "error", // 結合文字を含む正規表現の誤用を禁止
+    "no-new-native-nonconstructor": "error", // コンストラクタでないネイティブオブジェクトのnewを禁止
+    "no-nonoctal-decimal-escape": "error", // 非8進数エスケープシーケンスを禁止
+    "no-obj-calls": "error", // 関数として呼び出せないグローバルオブジェクト（Math等）の呼び出しを禁止
+    "no-prototype-builtins": "error", // Object.prototypeのメソッドの直接呼び出しを禁止
+    "no-self-assign": "error", // 自己代入を禁止
+    "no-setter-return": "error", // setterからの戻り値を禁止
+    "no-shadow-restricted-names": "error", // 制限された名前（undefined等）のシャドウイングを禁止
+    "no-sparse-arrays": "error", // スパース配列（[1,,3]）を禁止
+    "no-this-before-super": "error", // super()呼び出し前のthis参照を禁止
+    "no-undef": "off", // TypeScriptが解決するため不要
+    "no-unassigned-vars": "error", // 代入されていない変数の参照を禁止
+    "no-unreachable": "error", // 到達不能なコードを禁止
+    "no-unsafe-finally": "error", // finallyブロック内での制御フロー文（return等）を禁止
+    "no-unsafe-negation": "error", // 関係演算子の否定の誤用を禁止
+    "no-unsafe-optional-chaining": "error", // オプショナルチェーンの安全でない使用を禁止
+    "no-unused-expressions": "error", // 実行結果が使われない式を禁止
+    "no-unused-labels": "error", // 使われていないラベルを禁止
+    "no-unused-private-class-members": "error", // 使われていないプライベートクラスメンバを禁止
+    "no-unused-vars": "error", // 使われていない変数を禁止
+    "no-use-before-define": "error", // 定義前の使用を禁止
+    "no-useless-backreference": "error", // 正規表現内の無効な後方参照を禁止
+    "no-useless-catch": "error", // 何もしないcatch節を禁止
+    "no-useless-escape": "error", // 不要なエスケープ文字を禁止
+    "no-useless-rename": "error", // インポート/エクスポート時の不要なリネームを禁止
+    "no-with": "error", // with文の使用を禁止
+    "node/handle-callback-err": "error", // コールバックでのエラーハンドリングを強制
+    "object-shorthand": "warn", // オブジェクトのプロパティ略記法を推奨
+    "oxc/bad-array-method-on-arguments": "error", // argumentsオブジェクトに対する配列メソッドの使用を禁止
+    "oxc/bad-bitwise-operator": "error", // ビット演算子の不適切な使用を禁止
+    "oxc/bad-char-at-comparison": "error", // charAtの結果と不適切な長さの比較を禁止
+    "oxc/bad-comparison-sequence": "error", // 三重比較（a < b < c）のような誤った比較順序を禁止
+    "oxc/bad-min-max-func": "error", // Math.min/maxの引数が一定で結果が固定されるような呼び出しを禁止
+    "oxc/bad-object-literal-comparison": "error", // オブジェクトリテラルとの比較（常にfalse）を禁止
+    "oxc/bad-replace-all-arg": "error", // replaceAllの第1引数に非グローバルな正規表現を渡すことを禁止
+    "oxc/const-comparisons": "error", // 定数との不可能な比較を禁止
+    "oxc/double-comparisons": "error", // 二重の比較（同じ条件の繰り返し等）を禁止
+    "oxc/missing-throw": "error", // Errorインスタンスをthrowせずに生成だけすることを禁止
+    "oxc/no-accumulating-spread": "warn", // ループ内でのスプレッド構文による累積（O(n^2)）を警告
+    "oxc/no-async-endpoint-handlers": "warn", // 非同期エンドポイントハンドラの不適切な使用を警告
+    "oxc/no-map-spread": "warn", // Mapの構築時などの不必要なスプレッド構文を警告
+    "oxc/number-arg-out-of-range": "error", // 数値引数が許容範囲外であることを検知
+    "oxc/only-used-in-recursion": "error", // 再帰呼び出し以外で使われていない関数を禁止
+    "oxc/uninvoked-array-callback": "error", // 配列メソッドのコールバックが呼び出されない状態を禁止
+    "prefer-const": "warn", // 再代入されない変数にconstを推奨
+    "prefer-destructuring": "warn", // 分割代入の使用を推奨
+    "prefer-object-has-own": "warn", // Object.hasOwn()の使用を推奨
+    "prefer-spread": "warn", // applyの代わりにスプレッド構文を推奨
+    "prefer-template": "warn", // 文字列結合の代わりにテンプレートリテラルを推奨
+    "require-yield": "error", // ジェネレータ関数内でのyieldを強制
+    "typescript/await-thenable": "error", // awaitが不要な型（thenableでない）へのawaitを禁止
+    "typescript/explicit-function-return-type": "off", // 関数の戻り値の型定義を強制（現在はoff）
+    "typescript/no-array-delete": "error", // 配列に対するdelete演算子の使用を禁止
+    "typescript/no-base-to-string": "error", // オブジェクトのtoString()が[object Object]になるような使用を禁止
+    "typescript/no-duplicate-enum-values": "error", // enum内の重複した値を禁止
+    "typescript/no-duplicate-type-constituents": "error", // ユニオン型やインターセクション型での重複を禁止
+    "typescript/no-explicit-any": "error", // 明示的なany型の使用を禁止
+    "typescript/no-extra-non-null-assertion": "error", // 不要な二重の非ヌルアサーション（!!）を禁止
+    "typescript/no-floating-promises": "error", // awaitされていないPromiseを禁止
+    "typescript/no-for-in-array": "error", // 配列に対するfor-inループを禁止
+    "typescript/no-implied-eval": "error", // 文字列によるeval的な実行を禁止
+    "typescript/no-meaningless-void-operator": "error", // void演算子の不適切な使用を禁止
+    "typescript/no-misused-new": "error", // インターフェース等でのnewメソッドの誤用を禁止
+    "typescript/no-misused-promises": "error", // Promiseの不適切な箇所（条件式など）での使用を禁止
+    "typescript/no-non-null-asserted-optional-chain": "error", // オプショナルチェーン直後の非ヌルアサーションを禁止
+    "typescript/no-redundant-type-constituents": "error", // 型定義における冗長な構成要素を禁止
+    "typescript/no-this-alias": "error", // thisの変数への代入（alias）を禁止
+    "typescript/no-unnecessary-parameter-property-assignment": "error", // コンストラクタ引数プロパティの冗長な代入を禁止
+    "typescript/no-unsafe-assignment": "error", // any型を他の変数に代入することを禁止
+    "typescript/no-unsafe-call": "error", // any型の関数呼び出しを禁止
+    "typescript/no-unsafe-declaration-merging": "error", // 安全でない宣言の結合を禁止
+    "typescript/no-unsafe-member-access": "error", // any型のプロパティアクセスを禁止
+    "typescript/no-unsafe-return": "error", // any型を戻り値として返すことを禁止
+    "typescript/no-unsafe-unary-minus": "error", // 数値以外への単項マイナス演算を禁止
+    "typescript/no-useless-default-assignment": "error", // 不要なデフォルト値の代入を禁止
+    "typescript/no-useless-empty-export": "error", // 意味のない空のexportを禁止
+    "typescript/no-wrapper-object-types": "error", // StringやNumberなどのラッパーオブジェクト型の使用を禁止
+    "typescript/prefer-as-const": "error", // constアサーションの使用を推奨
+    "typescript/prefer-namespace-keyword": "off", // namespaceキーワードの使用を推奨（moduleではなく）
+    "typescript/prefer-string-starts-ends-with": "error", // startsWithやendsWithの使用を推奨
+    "typescript/require-array-sort-compare": "error", // 配列のsortに比較関数の指定を強制
+    "typescript/restrict-template-expressions": "error", // テンプレートリテラルに埋め込める型を制限
+    "typescript/triple-slash-reference": "error", // 三重スラッシュディレクティブの使用を禁止
+    "typescript/unbound-method": "error", // コンテキストを失う可能性のあるメソッド参照を禁止
+    "unicorn/filename-case": ["warn", { "case": "kebabCase" }], // ファイル名の命名規則を統一
+    "unicorn/no-empty-file": "error", // 空のファイルを禁止
+    "unicorn/no-invalid-fetch-options": "error", // fetchのオプションの誤りを禁止
+    "unicorn/no-invalid-remove-event-listener": "error", // removeEventListenerの第2引数の誤りを禁止
+    "unicorn/no-new-array": "error", // new Array()の使用を禁止（Array.from等への置き換え）
+    "unicorn/no-single-promise-in-promise-methods": "error", // Promise.all等に単一のPromiseを渡すことを禁止
+    "unicorn/no-thenable": "error", // thenプロパティを持つオブジェクト（thenable）の定義を禁止
+    "unicorn/no-unnecessary-await": "error", // 不要なawaitを禁止
+    "unicorn/no-useless-fallback-in-spread": "error", // スプレッド構文での不要なデフォルト値を禁止
+    "unicorn/no-useless-length-check": "error", // 不要なlengthチェックを禁止
+    "unicorn/no-useless-spread": "error", // 不要なスプレッド構文を禁止
+    "unicorn/prefer-node-protocol": "warn", // node: プレフィックスの使用を推奨
+    "unicorn/prefer-set-size": "error", // lengthではなくsizeプロパティの使用を推奨
+    "unicorn/prefer-string-starts-ends-with": "error", // startsWithやendsWithの使用を推奨
+    "use-isnan": "error", // NaNとの比較にisNaN()の使用を強制
+    "valid-typeof": "off" // TypeScriptが検知するため不要
+  }
+}

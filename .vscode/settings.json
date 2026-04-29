@@ -1,0 +1,28 @@
+{
+  "files.exclude": {
+    "out": true,
+    "dist": true,
+    "**/*.tsbuildinfo": true,
+    ".vscode-test": true
+  },
+  "search.exclude": {
+    "out": true,
+    "dist": true,
+    "node_modules": true,
+    "**/*.map": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.oxc": "explicit"
+    }
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.oxc": "explicit"
+    }
+  }
+}

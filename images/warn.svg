@@ -1,0 +1,33 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="16"
+  height="16"
+  viewBox="0 0 16 16"
+>
+  <!-- 黄色の三角形 -->
+  <path
+    d="M8 2.2L14 13.5H2L8 2.2Z"
+    fill="#F2C200"
+    stroke="#C9A000"
+    stroke-width="1"
+    stroke-linejoin="round"
+  />
+
+  <!-- 「!」の縦棒（黒） -->
+  <rect
+    x="7.25"
+    y="6"
+    width="1.5"
+    height="4.5"
+    rx="0.75"
+    fill="#000000"
+  />
+
+  <!-- 「!」の点（黒） -->
+  <circle
+    cx="8"
+    cy="11.5"
+    r="0.9"
+    fill="#000000"
+  />
+</svg>
