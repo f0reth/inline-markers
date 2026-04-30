@@ -15,6 +15,7 @@ A VS Code extension that enhances your coding experience with custom comment hig
 ## Usage
 
 ### Comment Tags
+
 Simply write a comment with one of the supported tags at the beginning:
 
 - `// TODO: Task to be done` (Orange)
@@ -24,6 +25,7 @@ Simply write a comment with one of the supported tags at the beginning:
 - `// * Highlighted information` (Green)
 
 Block comments are also supported:
+
 ```javascript
 /*
  * TODO: Multiline tasks
@@ -32,6 +34,7 @@ Block comments are also supported:
 ```
 
 ### Diagnostics (Gutter & Inline)
+
 The extension automatically listens to your language server (e.g., TypeScript, Python, ESLint) and displays issues as follows:
 
 - **Gutter Icons**: Colored icons appear right next to the line numbers.
@@ -64,6 +67,7 @@ You can customize the colors and visibility in VS Code Settings (`Ctrl+,`):
 ## 使用方法
 
 ### コメントタグ
+
 コメントの先頭に以下のタグを記述するだけで反映されます：
 
 - `// TODO: やることリスト` (オレンジ)
@@ -73,6 +77,7 @@ You can customize the colors and visibility in VS Code Settings (`Ctrl+,`):
 - `// * 強調したい情報` (緑)
 
 ブロックコメントにも対応しています：
+
 ```javascript
 /*
  * TODO: 複数行にわたるタスク
@@ -81,6 +86,7 @@ You can customize the colors and visibility in VS Code Settings (`Ctrl+,`):
 ```
 
 ### 診断表示 (ガーター & インライン)
+
 TypeScript や ESLint などの言語サーバーから報告される問題を以下のように表示します：
 
 - **ガーターアイコン**: 行番号のすぐ横に色付きのアイコンが表示されます。
