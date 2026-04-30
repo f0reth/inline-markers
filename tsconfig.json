@@ -6,7 +6,7 @@
     "lib": ["ESNext"],
     "sourceMap": true,
     "strict": true,
-    "types": ["node", "vscode"],
+    "types": ["node", "vscode", "mocha"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
