@@ -1,0 +1,28 @@
+{
+  "env": {
+    "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm run *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(pnpm test *)",
+      "Bash(Get-ChildItem -Recurse .claude/)",
+      "Bash(Select-Object FullName)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm run fmt && pnpm run check && pnpm run test"
+          }
+        ]
+      }
+    ]
+  }
+}
