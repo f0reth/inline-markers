@@ -18,3 +18,8 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
+# Local settings
+*.local.json
+*.local.js
+*.local.ts
+
