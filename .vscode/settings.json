@@ -1,10 +1,4 @@
 {
-  "files.exclude": {
-    "out": true,
-    "dist": true,
-    "**/*.tsbuildinfo": true,
-    ".vscode-test": true
-  },
   "search.exclude": {
     "out": true,
     "dist": true,
