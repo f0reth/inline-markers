@@ -4,6 +4,7 @@ import {
   ExtensionContext,
   Range,
   TextEditor,
+  TextEditorDecorationType,
   languages,
   window,
   workspace,
@@ -15,17 +16,19 @@ import { createGutterDecorators } from "./gutter";
 
 export function activate(context: ExtensionContext) {
   const gutters = createGutterDecorators(context);
-  context.subscriptions.push(
-    gutters.errorGutter,
-    gutters.warnGutter,
-    gutters.infoGutter,
-    gutters.hintGutter,
-  );
+  context.subscriptions.push({ dispose: () => gutters.dispose() });
 
   const diagLine = createDiagnosticLine();
   context.subscriptions.push({ dispose: () => diagLine.dispose() });
 
   const better = createBetterComments(context);
+
+  const gutterPairs: [TextEditorDecorationType, DiagnosticSeverity][] = [
+    [gutters.errorGutter, DiagnosticSeverity.Error],
+    [gutters.warnGutter, DiagnosticSeverity.Warning],
+    [gutters.infoGutter, DiagnosticSeverity.Information],
+    [gutters.hintGutter, DiagnosticSeverity.Hint],
+  ];
 
   let gutterEnabled = true;
 
@@ -68,22 +71,9 @@ export function activate(context: ExtensionContext) {
     }
 
     const empty: DecorationOptions[] = [];
-    editor.setDecorations(
-      gutters.errorGutter,
-      gutterEnabled ? severityMap.get(DiagnosticSeverity.Error)! : empty,
-    );
-    editor.setDecorations(
-      gutters.warnGutter,
-      gutterEnabled ? severityMap.get(DiagnosticSeverity.Warning)! : empty,
-    );
-    editor.setDecorations(
-      gutters.infoGutter,
-      gutterEnabled ? severityMap.get(DiagnosticSeverity.Information)! : empty,
-    );
-    editor.setDecorations(
-      gutters.hintGutter,
-      gutterEnabled ? severityMap.get(DiagnosticSeverity.Hint)! : empty,
-    );
+    for (const [gutter, severity] of gutterPairs) {
+      editor.setDecorations(gutter, gutterEnabled ? severityMap.get(severity)! : empty);
+    }
 
     diagLine.updateForTextDocument(editor.document.uri, lineOptions);
     diagLine.showLineDecoratorForDocument(editor.document.uri);
