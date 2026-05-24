@@ -1,12 +1,10 @@
 import * as assert from "node:assert";
 
-import * as vscode from "vscode";
-
 import { createGutterDecorators } from "../gutter";
 
 const stubContext = {
   asAbsolutePath: (p: string) => p,
-} as unknown as vscode.ExtensionContext;
+};
 
 suite("GutterDecorators — API", () => {
   test("createGutterDecorators returns 4 gutter properties and a dispose function", () => {

@@ -8,6 +8,8 @@ import {
   workspace,
 } from "vscode";
 
+type ContextLike = Pick<ExtensionContext, "asAbsolutePath">;
+
 import { DEFAULTS } from "./configurations";
 import { CommentTagKey, LocalTagConfig } from "./types";
 
@@ -19,7 +21,7 @@ const PATTERNS: Record<CommentTagKey, RegExp> = {
   highlight: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)\s*(.*)/,
 };
 
-export function createBetterComments(context: ExtensionContext) {
+export function createBetterComments(context: ContextLike) {
   type Key = CommentTagKey;
 
   const tagDecorators = new Map<Key, TextEditorDecorationType>();

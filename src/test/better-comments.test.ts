@@ -6,7 +6,7 @@ import { createBetterComments } from "../comments";
 
 const stubContext = {
   asAbsolutePath: (p: string) => p,
-} as unknown as vscode.ExtensionContext;
+};
 
 suite("BetterComments — API surface", () => {
   test("createBetterComments returns expected API (5 functions)", () => {

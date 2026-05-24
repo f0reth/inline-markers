@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-export function createGutterDecorators(context: vscode.ExtensionContext) {
+export function createGutterDecorators(context: Pick<vscode.ExtensionContext, "asAbsolutePath">) {
   const createDeco = (icon: string) =>
     vscode.window.createTextEditorDecorationType({
       gutterIconPath: context.asAbsolutePath(`images/${icon}.svg`),
