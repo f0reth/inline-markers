@@ -462,5 +462,129 @@ suite("Extension Test Suite", () => {
         dl.dispose();
       });
     });
+
+    test("Warning severity updateForTextDocument does not throw", () => {
+      const dl = createDiagnosticLine();
+      const uri = vscode.Uri.file("/test/warn.ts");
+      assert.doesNotThrow(() => {
+        dl.updateForTextDocument(uri, [
+          {
+            severity: vscode.DiagnosticSeverity.Warning,
+            message: "a warning",
+            range: new vscode.Range(0, 0, 0, 5),
+          },
+        ]);
+      });
+      dl.dispose();
+    });
+
+    test("Info severity showLineDecoratorForDocument does not throw", () => {
+      const dl = createDiagnosticLine();
+      dl.updateSettings({
+        showLine: true,
+        errorLabelBg: "#ff0000",
+        warnLabelBg: "#ffff00",
+        errFontColor: "#fff",
+        warnFontColor: "#000",
+        maxLineLength: 0,
+      });
+      const uri = vscode.Uri.file("/test/info.ts");
+      dl.updateForTextDocument(uri, [
+        {
+          severity: vscode.DiagnosticSeverity.Information,
+          message: "info message",
+          range: new vscode.Range(0, 0, 0, 5),
+        },
+      ]);
+      assert.doesNotThrow(() => dl.showLineDecoratorForDocument(uri));
+      dl.dispose();
+    });
+
+    test("double updateForTextDocument on same URI overwrites without throw", () => {
+      const dl = createDiagnosticLine();
+      const uri = vscode.Uri.file("/test/double.ts");
+      assert.doesNotThrow(() => {
+        dl.updateForTextDocument(uri, [
+          {
+            severity: vscode.DiagnosticSeverity.Error,
+            message: "first",
+            range: new vscode.Range(0, 0, 0, 5),
+          },
+        ]);
+        dl.updateForTextDocument(uri, [
+          {
+            severity: vscode.DiagnosticSeverity.Error,
+            message: "second",
+            range: new vscode.Range(1, 0, 1, 3),
+          },
+        ]);
+      });
+      dl.dispose();
+    });
+
+    test("three consecutive updateSettings calls do not throw", () => {
+      const dl = createDiagnosticLine();
+      const settings = {
+        showLine: true,
+        errorLabelBg: "#ff0000",
+        warnLabelBg: "#ffff00",
+        errFontColor: "#fff",
+        warnFontColor: "#000",
+        maxLineLength: 0,
+      };
+      assert.doesNotThrow(() => {
+        dl.updateSettings(settings);
+        dl.updateSettings(settings);
+        dl.updateSettings(settings);
+      });
+      dl.dispose();
+    });
+
+    test("empty diagnostics array does not throw", () => {
+      const dl = createDiagnosticLine();
+      const uri = vscode.Uri.file("/test/empty.ts");
+      assert.doesNotThrow(() => dl.updateForTextDocument(uri, []));
+      dl.dispose();
+    });
+
+    test("diagnostic with empty message does not throw", () => {
+      const dl = createDiagnosticLine();
+      const uri = vscode.Uri.file("/test/empty-msg.ts");
+      assert.doesNotThrow(() => {
+        dl.updateForTextDocument(uri, [
+          {
+            severity: vscode.DiagnosticSeverity.Error,
+            message: "",
+            range: new vscode.Range(0, 0, 0, 1),
+          },
+        ]);
+      });
+      dl.dispose();
+    });
+
+    test("multiple URIs tracked independently without interference", () => {
+      const dl = createDiagnosticLine();
+      const uriA = vscode.Uri.file("/test/a.ts");
+      const uriB = vscode.Uri.file("/test/b.ts");
+      assert.doesNotThrow(() => {
+        dl.updateForTextDocument(uriA, [
+          {
+            severity: vscode.DiagnosticSeverity.Error,
+            message: "error A",
+            range: new vscode.Range(0, 0, 0, 5),
+          },
+        ]);
+        dl.updateForTextDocument(uriB, [
+          {
+            severity: vscode.DiagnosticSeverity.Warning,
+            message: "warn B",
+            range: new vscode.Range(2, 0, 2, 3),
+          },
+        ]);
+        dl.removeForTextDocument(uriA);
+        dl.removeForTextDocument(uriB);
+      });
+      dl.dispose();
+    });
   });
 });
