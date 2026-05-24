@@ -4,10 +4,22 @@ import { runCommentsBench } from "./bench-comments";
 import { runDiagnosticLineBench } from "./bench-diagnostic-line";
 import { runGutterBench } from "./bench-gutter";
 
-export async function run() {
-  await runActivationBench();
-  await runCommentsBench();
-  await runGutterBench();
-  await runDiagnosticLineBench();
-  await runAllBench();
-}
+suite("Benchmarks", function () {
+  this.timeout(120000);
+
+  test("activation", async () => {
+    await runActivationBench();
+  });
+  test("comments", async () => {
+    await runCommentsBench();
+  });
+  test("gutter", async () => {
+    await runGutterBench();
+  });
+  test("diagnostic-line", async () => {
+    await runDiagnosticLineBench();
+  });
+  test("all", async () => {
+    await runAllBench();
+  });
+});
