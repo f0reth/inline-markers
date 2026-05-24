@@ -32,10 +32,11 @@ export function createBetterComments(context: ContextLike) {
   });
   const tagLineOptions = new Map<
     string,
-    { key: Key; message: string; range: Range; tagRange?: Range }[]
+    { key: Key; message: string; range: Range; tagRange: Range }[]
   >();
 
   let configs: Record<Key, LocalTagConfig> | undefined;
+  let activeKeys: Key[] = [];
   let excludeLanguages: string[] = ["markdown", "mdx"];
 
   const TAG_KEYS: Key[] = ["important", "fixme", "todo", "question", "highlight"];
@@ -50,8 +51,7 @@ export function createBetterComments(context: ContextLike) {
       return;
     }
 
-    const results: { key: Key; message: string; range: Range; tagRange?: Range }[] = [];
-    const activeKeys = TAG_KEYS.filter((k) => configs![k].enabled);
+    const results: { key: Key; message: string; range: Range; tagRange: Range }[] = [];
 
     for (let i = 0; i < doc.lineCount; i++) {
       const { text, range } = doc.lineAt(i);
@@ -65,9 +65,8 @@ export function createBetterComments(context: ContextLike) {
           message = tagText;
         }
 
-        const tagIndex = text.indexOf(tagText);
-        const tagRange =
-          tagIndex !== -1 ? new Range(i, tagIndex, i, tagIndex + tagText.length) : undefined;
+        const tagIndex = m.index + m[0].indexOf(tagText);
+        const tagRange = new Range(i, tagIndex, i, tagIndex + tagText.length);
 
         results.push({ key, message, range, tagRange });
         break;
@@ -88,7 +87,7 @@ export function createBetterComments(context: ContextLike) {
 
     for (const item of arr) {
       perTagOpts.get(item.key)?.push({ range: item.range, hoverMessage: item.message });
-      if (item.tagRange) clearOpts.push({ range: item.tagRange });
+      clearOpts.push({ range: item.tagRange });
     }
 
     for (const [key, deco] of tagDecorators.entries()) {
@@ -118,6 +117,7 @@ export function createBetterComments(context: ContextLike) {
       highlight: buildConfig("highlight"),
     };
     configs = newConfigs;
+    activeKeys = TAG_KEYS.filter((k) => configs![k].enabled);
 
     for (const d of tagDecorators.values()) {
       d.dispose();
