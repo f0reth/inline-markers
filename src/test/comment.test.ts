@@ -4,9 +4,9 @@ import * as assert from "node:assert";
 const COMMENT_PATTERNS = {
   todo: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*((?:TODO|FIXME)\b[:-]?)\s*(.*)/i,
   fixme: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(FIXME\b[:-]?)\s*(.*)/i,
-  important: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(!)\s*(.*)/,
-  question: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\?)\s*(.*)/,
-  highlight: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)\s*(.*)/,
+  important: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(!)(?=\s|$)\s*(.*)/,
+  question: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\?)(?=\s|$)\s*(.*)/,
+  highlight: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)(?=\s|$)\s*(.*)/,
 };
 
 suite("Comment Patterns", () => {
@@ -187,6 +187,14 @@ suite("Comment Patterns", () => {
       assert.strictEqual(m[1], "!");
       assert.strictEqual(m[2], "");
     });
+
+    test("does not match // !important (CSS false positive)", () => {
+      assert.strictEqual(pat.exec("// !important"), null);
+    });
+
+    test("does not match # !something (tag immediately followed by word)", () => {
+      assert.strictEqual(pat.exec("# !something"), null);
+    });
   });
 
   suite("question (?)", () => {
@@ -225,6 +233,10 @@ suite("Comment Patterns", () => {
 
     test("matches // ?? (double question mark)", () => {
       assert.ok(pat.exec("// ??"), "double question mark should match");
+    });
+
+    test("does not match // ?something (tag immediately followed by word)", () => {
+      assert.strictEqual(pat.exec("// ?something"), null);
     });
   });
 
@@ -272,6 +284,22 @@ suite("Comment Patterns", () => {
 
     test("does not match block comment close '*/'", () => {
       assert.strictEqual(pat.exec("*/"), null);
+    });
+
+    test("does not match glob pattern '**/*.ts'", () => {
+      assert.strictEqual(pat.exec("**/*.ts"), null);
+    });
+
+    test("does not match '# *.ts' (glob in hash comment)", () => {
+      assert.strictEqual(pat.exec("# *.ts"), null);
+    });
+
+    test("does not match '**/.vscode-test.*'", () => {
+      assert.strictEqual(pat.exec("**/.vscode-test.*"), null);
+    });
+
+    test("does not match '**/eslint.config.mjs'", () => {
+      assert.strictEqual(pat.exec("**/eslint.config.mjs"), null);
     });
   });
 });
