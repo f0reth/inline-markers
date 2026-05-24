@@ -7,11 +7,11 @@ import { createDiagnosticLine } from "../diagnostic-line";
 
 // Mirrors PATTERNS from comments.ts (not exported) for isolated regex testing
 const COMMENT_PATTERNS = {
-  todo: /(?:\/\/|#|--|^\s*\*|<!--|\/\*+)(?:[\s*!?]*)\s*((?:TODO|FIXME)\b[:-]?)\s*(.*)/i,
-  fixme: /(?:\/\/|#|--|^\s*\*|<!--|\/\*+)(?:[\s*!?]*)\s*(FIXME\b[:-]?)\s*(.*)/i,
-  important: /(?:\/\/|#|--|^\s*\*|<!--|\/\*+)(?:[\s*!?]*)\s*(!)\s*(.*)/,
-  question: /(?:\/\/|#|--|^\s*\*|<!--|\/\*+)(?:[\s*!?]*)\s*(\?)\s*(.*)/,
-  highlight: /(?:\/\/|#|--|^\s*\*|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)\s*(.*)/,
+  todo: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*((?:TODO|FIXME)\b[:-]?)\s*(.*)/i,
+  fixme: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(FIXME\b[:-]?)\s*(.*)/i,
+  important: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(!)\s*(.*)/,
+  question: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\?)\s*(.*)/,
+  highlight: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)\s*(.*)/,
 };
 
 // Mirrors truncation logic from diagnostic-line.ts for isolated testing
