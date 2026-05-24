@@ -6,6 +6,11 @@
   "categories": [
     "Other"
   ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/f0reth/inline-markers"
+  },
   "publisher": "f0reth",
   "main": "./dist/extension.js",
   "scripts": {
