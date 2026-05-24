@@ -71,7 +71,7 @@ export function createDiagnosticLine() {
     if (!active || !opts || active.document.uri.path !== uri.path) return;
 
     const categorizedOpts = new Map(
-      Array.from(lineDecorators.keys(), (k) => [k, [] as DecorationOptions[]])
+      Array.from(lineDecorators.keys(), (k) => [k, [] as DecorationOptions[]]),
     );
 
     for (const { severity, message: rawMessage, range } of opts) {
