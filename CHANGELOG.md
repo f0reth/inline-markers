@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.0.2] - 2026-05-24
+
+### Added
+
+- **excludeLanguages config**: New `inline-markers.comments.excludeLanguages` setting to disable comment tag highlighting per language. Defaults to `["markdown", "mdx"]`.
+
+### Fixed
+
+- **Comment pattern anchoring**: Added line-start anchor to comment regex patterns to prevent false matches inside string literals. Note: inline HTML comments (e.g., `<!-- TODO: ... -->` mid-line) are no longer matched, which aligns with the intended behavior.
+
 ## [0.0.1] - 2026-04-29
 
 ### Added
