@@ -270,6 +270,205 @@ suite("DiagnosticLine — API", () => {
   });
 });
 
+suite("DiagnosticLine — showLine: false guard", () => {
+  test("showLineDecoratorForDocument is no-op when showLine is false (default)", () => {
+    const dl = createDiagnosticLine();
+    const uri = vscode.Uri.file("/test/no-show.ts");
+    dl.updateForTextDocument(uri, [
+      {
+        severity: vscode.DiagnosticSeverity.Error,
+        message: "error",
+        range: new vscode.Range(0, 0, 0, 5),
+      },
+    ]);
+    assert.doesNotThrow(() => dl.showLineDecoratorForDocument(uri));
+    dl.dispose();
+  });
+
+  test("updateSettings(showLine:false) after true clears decorators without throw", () => {
+    const dl = createDiagnosticLine();
+    assert.doesNotThrow(() => {
+      dl.updateSettings({
+        showLine: true,
+        errorLabelBg: "#ff0000",
+        warnLabelBg: "#ffff00",
+        errFontColor: "#fff",
+        warnFontColor: "#000",
+        maxLineLength: 0,
+      });
+      dl.updateSettings({
+        showLine: false,
+        errorLabelBg: "#ff0000",
+        warnLabelBg: "#ffff00",
+        errFontColor: "#fff",
+        warnFontColor: "#000",
+        maxLineLength: 0,
+      });
+    });
+    dl.dispose();
+  });
+});
+
+suite("DiagnosticLine — post-remove behavior", () => {
+  test("showLineDecoratorForDocument after removeForTextDocument does not throw", () => {
+    const dl = createDiagnosticLine();
+    dl.updateSettings({
+      showLine: true,
+      errorLabelBg: "#ff0000",
+      warnLabelBg: "#ffff00",
+      errFontColor: "#fff",
+      warnFontColor: "#000",
+      maxLineLength: 0,
+    });
+    const uri = vscode.Uri.file("/test/post-remove.ts");
+    dl.updateForTextDocument(uri, [
+      {
+        severity: vscode.DiagnosticSeverity.Error,
+        message: "msg",
+        range: new vscode.Range(0, 0, 0, 3),
+      },
+    ]);
+    dl.removeForTextDocument(uri);
+    assert.doesNotThrow(() => dl.showLineDecoratorForDocument(uri));
+    dl.dispose();
+  });
+
+  test("showLineDecoratorForDocument for URI that was never registered does not throw", () => {
+    const dl = createDiagnosticLine();
+    dl.updateSettings({
+      showLine: true,
+      errorLabelBg: "#ff0000",
+      warnLabelBg: "#ffff00",
+      errFontColor: "#fff",
+      warnFontColor: "#000",
+      maxLineLength: 0,
+    });
+    const uri = vscode.Uri.file("/test/never-registered.ts");
+    assert.doesNotThrow(() => dl.showLineDecoratorForDocument(uri));
+    dl.dispose();
+  });
+});
+
+suite("DiagnosticLine — severity handling", () => {
+  test("Hint severity in lineOptions does not cause error in showLineDecoratorForDocument", () => {
+    const dl = createDiagnosticLine();
+    dl.updateSettings({
+      showLine: true,
+      errorLabelBg: "#ff0000",
+      warnLabelBg: "#ffff00",
+      errFontColor: "#fff",
+      warnFontColor: "#000",
+      maxLineLength: 0,
+    });
+    const uri = vscode.Uri.file("/test/hint.ts");
+    dl.updateForTextDocument(uri, [
+      {
+        severity: vscode.DiagnosticSeverity.Hint,
+        message: "hint message",
+        range: new vscode.Range(0, 0, 0, 5),
+      },
+    ]);
+    assert.doesNotThrow(() => dl.showLineDecoratorForDocument(uri));
+    dl.dispose();
+  });
+
+  test("mixed severities (Error + Warning + Info + Hint) in single call do not throw", () => {
+    const dl = createDiagnosticLine();
+    dl.updateSettings({
+      showLine: true,
+      errorLabelBg: "#ff0000",
+      warnLabelBg: "#ffff00",
+      errFontColor: "#fff",
+      warnFontColor: "#000",
+      maxLineLength: 0,
+    });
+    const uri = vscode.Uri.file("/test/mixed.ts");
+    dl.updateForTextDocument(uri, [
+      {
+        severity: vscode.DiagnosticSeverity.Error,
+        message: "err",
+        range: new vscode.Range(0, 0, 0, 3),
+      },
+      {
+        severity: vscode.DiagnosticSeverity.Warning,
+        message: "warn",
+        range: new vscode.Range(1, 0, 1, 4),
+      },
+      {
+        severity: vscode.DiagnosticSeverity.Information,
+        message: "info",
+        range: new vscode.Range(2, 0, 2, 4),
+      },
+      {
+        severity: vscode.DiagnosticSeverity.Hint,
+        message: "hint",
+        range: new vscode.Range(3, 0, 3, 4),
+      },
+    ]);
+    assert.doesNotThrow(() => dl.showLineDecoratorForDocument(uri));
+    dl.dispose();
+  });
+});
+
+suite("DiagnosticLine — settings transitions", () => {
+  test("updateSettings: showLine true → false → true sequence does not throw", () => {
+    const dl = createDiagnosticLine();
+    const base = {
+      errorLabelBg: "#ff0000",
+      warnLabelBg: "#ffff00",
+      errFontColor: "#fff",
+      warnFontColor: "#000",
+      maxLineLength: 0,
+    };
+    assert.doesNotThrow(() => {
+      dl.updateSettings({ ...base, showLine: true });
+      dl.updateSettings({ ...base, showLine: false });
+      dl.updateSettings({ ...base, showLine: true });
+    });
+    dl.dispose();
+  });
+
+  test("updateSettings: color strings that are empty strings do not throw", () => {
+    const dl = createDiagnosticLine();
+    assert.doesNotThrow(() => {
+      dl.updateSettings({
+        showLine: true,
+        errorLabelBg: "",
+        warnLabelBg: "",
+        errFontColor: "",
+        warnFontColor: "",
+        maxLineLength: 0,
+      });
+    });
+    dl.dispose();
+  });
+});
+
+suite("DiagnosticLine — message truncation boundary values (pure function)", () => {
+  test("maxLineLength: 1 truncates all but first character", () => {
+    assert.strictEqual(truncateMessage("hello", 1), "h...");
+  });
+
+  test("unicode multibyte characters: substring by code unit count (JS substring counts code units, not grapheme clusters)", () => {
+    const emoji = "😀😀😀";
+    assert.strictEqual(truncateMessage(emoji, 2), `${emoji.substring(0, 2)}...`);
+  });
+});
+
+suite("DiagnosticLine — large scale", () => {
+  test("1000 diagnostics in a single updateForTextDocument does not throw", () => {
+    const dl = createDiagnosticLine();
+    const uri = vscode.Uri.file("/test/large.ts");
+    const opts = Array.from({ length: 1000 }, (_, i) => ({
+      severity: vscode.DiagnosticSeverity.Error,
+      message: `error ${i}`,
+      range: new vscode.Range(i, 0, i, 5),
+    }));
+    assert.doesNotThrow(() => dl.updateForTextDocument(uri, opts));
+    dl.dispose();
+  });
+});
+
 suite("DiagnosticLine — line-end placement invariant", () => {
   test("range built from lineAt().range.end is zero-width", async () => {
     const doc = await vscode.workspace.openTextDocument({
