@@ -40,6 +40,14 @@ export function createBetterComments(context: ExtensionContext) {
     const doc = workspace.textDocuments.find((d) => d.uri.path === uri.path);
     if (!doc) return;
 
+    const excludeLangs: string[] = workspace
+      .getConfiguration("inline-markers.comments")
+      .get("excludeLanguages", ["markdown", "mdx"]);
+    if (excludeLangs.includes(doc.languageId)) {
+      tagLineOptions.delete(uri.path);
+      return;
+    }
+
     const results: { key: Key; message: string; range: Range; tagRange?: Range }[] = [];
     const activeKeys = TAG_KEYS.filter((k) => configs![k].enabled);
 

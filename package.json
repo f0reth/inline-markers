@@ -6,6 +6,7 @@
   "categories": [
     "Other"
   ],
+  "publisher": "f0reth",
   "main": "./dist/extension.js",
   "scripts": {
     "vscode:prepublish": "pnpm run package",
@@ -73,6 +74,17 @@
           "type": "number",
           "default": 120,
           "description": "Maximum length of diagnostic messages."
+        },
+        "inline-markers.comments.excludeLanguages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "markdown",
+            "mdx"
+          ],
+          "description": "List of language IDs where comment tag highlighting is disabled (e.g. markdown, mdx)."
         },
         "inline-markers.comments.todo.enabled": {
           "type": "boolean",
