@@ -587,4 +587,58 @@ suite("Extension Test Suite", () => {
       dl.dispose();
     });
   });
+
+  suite("DiagnosticLine — line-end placement invariant", () => {
+    test("range built from lineAt().range.end is zero-width", async () => {
+      const doc = await vscode.workspace.openTextDocument({
+        content: "const x = 1;",
+        language: "typescript",
+      });
+      const lineEnd = doc.lineAt(0).range.end;
+      const range = new vscode.Range(lineEnd, lineEnd);
+      assert.ok(range.isEmpty, "line-end range should be zero-width");
+    });
+
+    test("lineAt().range.end.character matches text length", async () => {
+      const text = "let value = 42;";
+      const doc = await vscode.workspace.openTextDocument({
+        content: text,
+        language: "typescript",
+      });
+      const lineEnd = doc.lineAt(0).range.end;
+      assert.strictEqual(lineEnd.character, text.length);
+    });
+
+    test("multi-line document: each line end character matches text length", async () => {
+      const lines = ["first line", "second line longer"];
+      const doc = await vscode.workspace.openTextDocument({
+        content: lines.join("\n"),
+        language: "typescript",
+      });
+      for (let i = 0; i < lines.length; i++) {
+        const lineEnd = doc.lineAt(i).range.end;
+        assert.strictEqual(
+          lineEnd.character,
+          lines[i].length,
+          `line ${i} end character should equal text length`,
+        );
+        const range = new vscode.Range(lineEnd, lineEnd);
+        assert.ok(range.isEmpty, `line ${i} zero-width range should be empty`);
+      }
+    });
+
+    test("updateForTextDocument does not mutate the input range object", () => {
+      const dl = createDiagnosticLine();
+      const uri = vscode.Uri.file("/test/mutate.ts");
+      const range = new vscode.Range(0, 10, 0, 10);
+      const origStart = range.start.character;
+      const origEnd = range.end.character;
+      dl.updateForTextDocument(uri, [
+        { severity: vscode.DiagnosticSeverity.Error, message: "msg", range },
+      ]);
+      assert.strictEqual(range.start.character, origStart, "start.character should not be mutated");
+      assert.strictEqual(range.end.character, origEnd, "end.character should not be mutated");
+      dl.dispose();
+    });
+  });
 });
