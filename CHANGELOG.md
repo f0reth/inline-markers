@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.0.3] - 2026-05-24
+
+### Fixed
+
+- **Diagnostic inline message position**: Diagnostic decorations are now always placed at the end of the line (`lineAt().range.end`) instead of at the start of the diagnostic range.
+
 ## [0.0.2] - 2026-05-24
 
 ### Added
