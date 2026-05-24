@@ -15,9 +15,7 @@ export function createGutterDecorators(context: Pick<vscode.ExtensionContext, "a
   const disposables = [errorGutter, warnGutter, infoGutter, hintGutter];
 
   function dispose() {
-    disposables.forEach((d) => {
-      d.dispose();
-    });
+    for (const d of disposables) d.dispose();
   }
 
   return {
