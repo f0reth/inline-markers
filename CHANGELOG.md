@@ -1,5 +1,26 @@
 # Change Log
 
+## [0.0.5] - 2026-05-24
+
+### Added
+
+- **Performance benchmark suite**: Benchmarks for comments `analyzeDocument`, gutter `setDecorations`, diagnostic-line, all-features integration, and extension activation time.
+
+### Performance
+
+- **Comments module**: Cache `activeKeys` and use regex index for `tagRange` to reduce redundant lookups.
+
+### Fixed
+
+- **Diagnostic-line**: Remove double disposal and simplify `categorizedOpts` initialization.
+- **Type safety**: Replace unsafe type assertion with explicit object literal.
+
+### Internal
+
+- Simplify `updateSettingsAndRecreate` with loop and consolidate gutter update logic.
+- Remove unused `HasValue` interface and `showLine` field.
+- Unify gutter `setDecorations` with severity pair loop.
+
 ## [0.0.4] - 2026-05-24
 
 ### Fixed
