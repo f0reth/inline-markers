@@ -39,6 +39,21 @@ export async function measure(
   return result;
 }
 
+function buildMarkdown(results: BenchResult[]): string {
+  const timestamp = new Date().toISOString();
+  const header = `# Benchmark Results\n\n_Generated: ${timestamp}_\n\n`;
+  const tableHeader =
+    "| Label | avg (ms) | min (ms) | max (ms) | p95 (ms) | iters |\n" +
+    "| --- | ---: | ---: | ---: | ---: | ---: |\n";
+  const rows = results
+    .map(
+      (r) =>
+        `| ${r.label} | ${r.avg.toFixed(3)} | ${r.min.toFixed(3)} | ${r.max.toFixed(3)} | ${r.p95.toFixed(3)} | ${r.iterations} |`,
+    )
+    .join("\n");
+  return `${header}${tableHeader}${rows}\n`;
+}
+
 export function printResults(results: BenchResult[]) {
   const COL = 52;
   console.log("\n=== Benchmark Results ===");
@@ -58,4 +73,9 @@ export function printResults(results: BenchResult[]) {
     fs.writeFileSync(outPath, JSON.stringify(results, null, 2));
     console.log(`\n[bench] Results saved to ${outPath}`);
   }
+
+  const md = buildMarkdown(results);
+  const mdPath = path.join(process.cwd(), "bench-results.md");
+  fs.writeFileSync(mdPath, md);
+  console.log(`[bench] Markdown results saved to ${mdPath}`);
 }
