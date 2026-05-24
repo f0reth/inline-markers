@@ -10,16 +10,14 @@
   "main": "./dist/extension.js",
   "scripts": {
     "vscode:prepublish": "pnpm run package",
-    "compile": "pnpm run check && node esbuild.js",
+    "compile": "pnpm run lint && node esbuild.js",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch",
-    "package": "pnpm run check && node esbuild.js --production",
-    "check": "oxlint --type-aware --type-check",
-    "lint": "oxlint --type-aware",
+    "package": "pnpm run lint && node esbuild.js --production",
+    "lint": "oxlint --type-aware --type-check",
     "fmt": "oxfmt",
-    "test": "vscode-test",
-    "pretest": "pnpm run check"
+    "test": "pnpm run compile && vscode-test"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
