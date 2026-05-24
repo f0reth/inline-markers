@@ -104,15 +104,19 @@ export function createBetterComments(context: ContextLike) {
   function updateSettingsAndRecreate() {
     const config = workspace.getConfiguration("inline-markers.comments");
     excludeLanguages = config.get("excludeLanguages", ["markdown", "mdx"]);
-    const newConfigs = {} as Record<Key, LocalTagConfig>;
-    for (const key of TAG_KEYS) {
-      newConfigs[key] = {
-        ...DEFAULTS[key],
-        pattern: PATTERNS[key],
-        enabled: config.get(`${key}.enabled`, DEFAULTS[key].enabled),
-        color: config.get(`${key}.color`, DEFAULTS[key].color),
-      };
-    }
+    const buildConfig = (key: Key): LocalTagConfig => ({
+      ...DEFAULTS[key],
+      pattern: PATTERNS[key],
+      enabled: config.get(`${key}.enabled`, DEFAULTS[key].enabled),
+      color: config.get(`${key}.color`, DEFAULTS[key].color),
+    });
+    const newConfigs: Record<Key, LocalTagConfig> = {
+      important: buildConfig("important"),
+      fixme: buildConfig("fixme"),
+      todo: buildConfig("todo"),
+      question: buildConfig("question"),
+      highlight: buildConfig("highlight"),
+    };
     configs = newConfigs;
 
     for (const d of tagDecorators.values()) {
