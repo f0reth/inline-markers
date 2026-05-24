@@ -51,7 +51,7 @@ export function activate(context: ExtensionContext) {
 
   updateSettings();
 
-  function updateAll(editor: TextEditor | undefined) {
+  function updateDiagnosticsOnly(editor: TextEditor | undefined) {
     if (!editor) return;
 
     const diagnostics = languages.getDiagnostics(editor.document.uri);
@@ -80,12 +80,18 @@ export function activate(context: ExtensionContext) {
 
     diagLine.updateForTextDocument(editor.document.uri, lineOptions);
     diagLine.showLineDecoratorForDocument(editor.document.uri);
+  }
 
+  function updateAll(editor: TextEditor | undefined) {
+    if (!editor) return;
+    updateDiagnosticsOnly(editor);
     better.analyzeDocument(editor.document.uri);
     better.showForDocument(editor.document.uri);
   }
 
   let timeout: ReturnType<typeof setTimeout> | undefined;
+  let diagTimeout: ReturnType<typeof setTimeout> | undefined;
+
   const scheduleUpdate = (immediate = false) => {
     if (timeout) clearTimeout(timeout);
     if (immediate) {
@@ -93,6 +99,11 @@ export function activate(context: ExtensionContext) {
       return;
     }
     timeout = setTimeout(() => updateAll(window.activeTextEditor), 200);
+  };
+
+  const scheduleDiagnosticsUpdate = () => {
+    if (diagTimeout) clearTimeout(diagTimeout);
+    diagTimeout = setTimeout(() => updateDiagnosticsOnly(window.activeTextEditor), 200);
   };
 
   context.subscriptions.push(
@@ -106,7 +117,7 @@ export function activate(context: ExtensionContext) {
         scheduleUpdate(true);
       }
     }),
-    languages.onDidChangeDiagnostics(() => scheduleUpdate()),
+    languages.onDidChangeDiagnostics(() => scheduleDiagnosticsUpdate()),
     { dispose: () => better.dispose() },
   );
 
