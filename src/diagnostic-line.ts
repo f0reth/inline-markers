@@ -70,10 +70,9 @@ export function createDiagnosticLine() {
     const opts = lineOpts.get(uri.path);
     if (!active || !opts || active.document.uri.path !== uri.path) return;
 
-    const categorizedOpts = new Map<DiagnosticSeverity, DecorationOptions[]>();
-    for (const key of lineDecorators.keys()) {
-      categorizedOpts.set(key, []);
-    }
+    const categorizedOpts = new Map(
+      Array.from(lineDecorators.keys(), (k) => [k, [] as DecorationOptions[]])
+    );
 
     for (const { severity, message: rawMessage, range } of opts) {
       if (!categorizedOpts.has(severity)) continue;
@@ -101,7 +100,8 @@ export function createDiagnosticLine() {
 
   function dispose() {
     for (const d of disposables) d.dispose();
-    for (const d of lineDecorators.values()) d.dispose();
+    lineDecorators.clear();
+    lineOpts.clear();
   }
 
   return {
