@@ -5,6 +5,7 @@ import * as esbuild from "esbuild";
 
 const production = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
+const bench = process.argv.includes("--bench");
 
 const esbuildProblemMatcherPlugin = {
   name: "esbuild-problem-matcher",
@@ -81,6 +82,23 @@ async function main() {
       await testCtx.rebuild();
       await testCtx.dispose();
     }
+  }
+
+  if (bench) {
+    const benchCtx = await esbuild.context({
+      entryPoints: ["src/test/bench/runner.ts"],
+      bundle: true,
+      format: "cjs",
+      platform: "node",
+      target: "node24",
+      outfile: "dist/test/bench/runner.js",
+      external: ["vscode"],
+      sourcemap: true,
+      logLevel: "info",
+      plugins: [esbuildProblemMatcherPlugin],
+    });
+    await benchCtx.rebuild();
+    await benchCtx.dispose();
   }
 }
 
