@@ -2,6 +2,7 @@ import {
   DecorationOptions,
   DiagnosticSeverity,
   ExtensionContext,
+  Range,
   TextEditor,
   languages,
   window,
@@ -55,7 +56,12 @@ export function activate(context: ExtensionContext) {
 
     for (const d of diagnostics) {
       severityMap.get(d.severity)?.push({ range: d.range, hoverMessage: d.message });
-      lineOptions.push({ severity: d.severity, message: d.message, range: d.range });
+      const lineEnd = editor.document.lineAt(d.range.start.line).range.end;
+      lineOptions.push({
+        severity: d.severity,
+        message: d.message,
+        range: new Range(lineEnd, lineEnd),
+      });
     }
 
     const config = workspace.getConfiguration("inline-markers");
