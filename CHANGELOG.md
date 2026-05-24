@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.0.4] - 2026-05-24
+
+### Fixed
+
+- **Single-char tag false positives**: Added lookahead `(?=\s|$)` to `!`, `?`, and `*` comment patterns so they no longer match when immediately followed by non-whitespace (e.g., glob patterns like `*.ts` or `!important`).
+
 ## [0.0.3] - 2026-05-24
 
 ### Fixed
