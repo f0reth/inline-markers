@@ -22,7 +22,8 @@
     "package": "pnpm run lint && node esbuild.js --production",
     "lint": "oxlint --type-aware --type-check",
     "fmt": "oxfmt",
-    "test": "pnpm run compile && vscode-test"
+    "bench": "node esbuild.js --bench && vscode-test --config .vscode-test.mjs --label bench",
+    "test": "pnpm run compile && vscode-test --label test"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
