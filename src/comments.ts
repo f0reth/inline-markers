@@ -104,42 +104,20 @@ export function createBetterComments(context: ContextLike) {
   function updateSettingsAndRecreate() {
     const config = workspace.getConfiguration("inline-markers.comments");
     excludeLanguages = config.get("excludeLanguages", ["markdown", "mdx"]);
-    configs = {
-      todo: {
-        ...DEFAULTS.todo,
-        pattern: PATTERNS.todo,
-        enabled: config.get("todo.enabled", DEFAULTS.todo.enabled),
-        color: config.get("todo.color", DEFAULTS.todo.color),
-      },
-      fixme: {
-        ...DEFAULTS.fixme,
-        pattern: PATTERNS.fixme,
-        enabled: config.get("fixme.enabled", DEFAULTS.fixme.enabled),
-        color: config.get("fixme.color", DEFAULTS.fixme.color),
-      },
-      important: {
-        ...DEFAULTS.important,
-        pattern: PATTERNS.important,
-        enabled: config.get("important.enabled", DEFAULTS.important.enabled),
-        color: config.get("important.color", DEFAULTS.important.color),
-      },
-      question: {
-        ...DEFAULTS.question,
-        pattern: PATTERNS.question,
-        enabled: config.get("question.enabled", DEFAULTS.question.enabled),
-        color: config.get("question.color", DEFAULTS.question.color),
-      },
-      highlight: {
-        ...DEFAULTS.highlight,
-        pattern: PATTERNS.highlight,
-        enabled: config.get("highlight.enabled", DEFAULTS.highlight.enabled),
-        color: config.get("highlight.color", DEFAULTS.highlight.color),
-      },
-    };
+    const newConfigs = {} as Record<Key, LocalTagConfig>;
+    for (const key of TAG_KEYS) {
+      newConfigs[key] = {
+        ...DEFAULTS[key],
+        pattern: PATTERNS[key],
+        enabled: config.get(`${key}.enabled`, DEFAULTS[key].enabled),
+        color: config.get(`${key}.color`, DEFAULTS[key].color),
+      };
+    }
+    configs = newConfigs;
 
-    tagDecorators.forEach((d) => {
+    for (const d of tagDecorators.values()) {
       d.dispose();
-    });
+    }
     tagDecorators.clear();
 
     for (const key of TAG_KEYS) {
@@ -159,9 +137,9 @@ export function createBetterComments(context: ContextLike) {
   }
 
   function dispose() {
-    tagDecorators.forEach((d) => {
+    for (const d of tagDecorators.values()) {
       d.dispose();
-    });
+    }
     tagDecorators.clear();
     clearBackgroundDeco.dispose();
     tagLineOptions.clear();

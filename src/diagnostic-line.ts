@@ -42,7 +42,7 @@ export function createDiagnosticLine() {
   function updateSettings(newSettings: IDiagnosticLineSettings) {
     settings = newSettings;
 
-    lineDecorators.forEach((deco) => deco.dispose());
+    for (const deco of lineDecorators.values()) deco.dispose();
     lineDecorators.clear();
 
     if (!settings.showLine) return;
@@ -100,12 +100,8 @@ export function createDiagnosticLine() {
   }
 
   function dispose() {
-    disposables.forEach((d) => {
-      d.dispose();
-    });
-    lineDecorators.forEach((d) => {
-      d.dispose();
-    });
+    for (const d of disposables) d.dispose();
+    for (const d of lineDecorators.values()) d.dispose();
   }
 
   return {
