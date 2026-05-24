@@ -27,8 +27,11 @@ export function activate(context: ExtensionContext) {
 
   const better = createBetterComments(context);
 
+  let gutterEnabled = true;
+
   function updateSettings() {
     const config = workspace.getConfiguration("inline-markers");
+    gutterEnabled = config.get("gutter.enabled", true);
     diagLine.updateSettings({
       showLine: config.get("diagnosticLine.enabled", true),
       errorLabelBg: config.get("diagnosticLine.errorLabelBg", "#d32f2f88"),
@@ -64,20 +67,23 @@ export function activate(context: ExtensionContext) {
       });
     }
 
-    const config = workspace.getConfiguration("inline-markers");
-    const gutterEnabled = config.get("gutter.enabled", true);
-
-    if (gutterEnabled) {
-      editor.setDecorations(gutters.errorGutter, severityMap.get(DiagnosticSeverity.Error)!);
-      editor.setDecorations(gutters.warnGutter, severityMap.get(DiagnosticSeverity.Warning)!);
-      editor.setDecorations(gutters.infoGutter, severityMap.get(DiagnosticSeverity.Information)!);
-      editor.setDecorations(gutters.hintGutter, severityMap.get(DiagnosticSeverity.Hint)!);
-    } else {
-      editor.setDecorations(gutters.errorGutter, []);
-      editor.setDecorations(gutters.warnGutter, []);
-      editor.setDecorations(gutters.infoGutter, []);
-      editor.setDecorations(gutters.hintGutter, []);
-    }
+    const empty: DecorationOptions[] = [];
+    editor.setDecorations(
+      gutters.errorGutter,
+      gutterEnabled ? severityMap.get(DiagnosticSeverity.Error)! : empty,
+    );
+    editor.setDecorations(
+      gutters.warnGutter,
+      gutterEnabled ? severityMap.get(DiagnosticSeverity.Warning)! : empty,
+    );
+    editor.setDecorations(
+      gutters.infoGutter,
+      gutterEnabled ? severityMap.get(DiagnosticSeverity.Information)! : empty,
+    );
+    editor.setDecorations(
+      gutters.hintGutter,
+      gutterEnabled ? severityMap.get(DiagnosticSeverity.Hint)! : empty,
+    );
 
     diagLine.updateForTextDocument(editor.document.uri, lineOptions);
     diagLine.showLineDecoratorForDocument(editor.document.uri);

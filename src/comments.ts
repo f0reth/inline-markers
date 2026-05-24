@@ -21,6 +21,8 @@ const PATTERNS: Record<CommentTagKey, RegExp> = {
   highlight: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)(?=\s|$)\s*(.*)/,
 };
 
+const TRAIL_RE = /(?:\s*\*+\/|\s*-->)\s*$/;
+
 export function createBetterComments(context: ContextLike) {
   type Key = CommentTagKey;
 
@@ -34,6 +36,7 @@ export function createBetterComments(context: ContextLike) {
   >();
 
   let configs: Record<Key, LocalTagConfig> | undefined;
+  let excludeLanguages: string[] = ["markdown", "mdx"];
 
   const TAG_KEYS: Key[] = ["important", "fixme", "todo", "question", "highlight"];
 
@@ -42,10 +45,7 @@ export function createBetterComments(context: ContextLike) {
     const doc = workspace.textDocuments.find((d) => d.uri.path === uri.path);
     if (!doc) return;
 
-    const excludeLangs: string[] = workspace
-      .getConfiguration("inline-markers.comments")
-      .get("excludeLanguages", ["markdown", "mdx"]);
-    if (excludeLangs.includes(doc.languageId)) {
+    if (excludeLanguages.includes(doc.languageId)) {
       tagLineOptions.delete(uri.path);
       return;
     }
@@ -60,7 +60,7 @@ export function createBetterComments(context: ContextLike) {
         if (!m) continue;
 
         const tagText = m[1] ?? m[0];
-        let message = (m[2] ?? "").trim().replace(/(?:\s*\*+\/|\s*-->)\s*$/, "");
+        let message = (m[2] ?? "").trim().replace(TRAIL_RE, "");
         if (!message) {
           message = tagText;
         }
@@ -103,6 +103,7 @@ export function createBetterComments(context: ContextLike) {
 
   function updateSettingsAndRecreate() {
     const config = workspace.getConfiguration("inline-markers.comments");
+    excludeLanguages = config.get("excludeLanguages", ["markdown", "mdx"]);
     configs = {
       todo: {
         ...DEFAULTS.todo,
