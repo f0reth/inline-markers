@@ -61,6 +61,24 @@ suite("Extension Test Suite", () => {
         );
       }
     });
+
+    test("all tags have hex-format colors", () => {
+      const hexRe = /^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/;
+      const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
+      for (const key of keys) {
+        assert.ok(hexRe.test(DEFAULTS[key].color), `${key}.color should be hex format`);
+      }
+    });
+
+    test("all tags have gutterIcon starting with images/", () => {
+      const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
+      for (const key of keys) {
+        assert.ok(
+          DEFAULTS[key].gutterIcon.startsWith("images/"),
+          `${key}.gutterIcon should start with "images/"`,
+        );
+      }
+    });
   });
 
   suite("Comment Patterns", () => {
