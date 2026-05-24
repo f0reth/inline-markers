@@ -41,6 +41,9 @@ export function createBetterComments(context: ContextLike) {
 
   const TAG_KEYS: Key[] = ["important", "fixme", "todo", "question", "highlight"];
 
+  const perTagOpts = new Map<Key, DecorationOptions[]>();
+  const clearOpts: DecorationOptions[] = [];
+
   function analyzeDocument(uri: Uri) {
     if (!configs) return;
     const doc = workspace.textDocuments.find((d) => d.uri.path === uri.path);
@@ -79,10 +82,9 @@ export function createBetterComments(context: ContextLike) {
     const active = window.activeTextEditor;
     if (!active || active.document.uri.path !== uri.path) return;
 
-    const perTagOpts = new Map<Key, DecorationOptions[]>();
-    for (const key of tagDecorators.keys()) perTagOpts.set(key, []);
+    for (const arr of perTagOpts.values()) arr.length = 0;
+    clearOpts.length = 0;
 
-    const clearOpts: DecorationOptions[] = [];
     const arr = tagLineOptions.get(uri.path) || [];
 
     for (const item of arr) {
@@ -134,6 +136,9 @@ export function createBetterComments(context: ContextLike) {
       });
       tagDecorators.set(key, deco);
     }
+
+    perTagOpts.clear();
+    for (const k of tagDecorators.keys()) perTagOpts.set(k, []);
 
     for (const doc of workspace.textDocuments) {
       analyzeDocument(doc.uri);

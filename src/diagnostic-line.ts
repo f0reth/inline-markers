@@ -39,6 +39,8 @@ export function createDiagnosticLine() {
   const defaultDecoration = window.createTextEditorDecorationType({});
   disposables.push(defaultDecoration);
 
+  const categorizedOpts = new Map<DiagnosticSeverity, DecorationOptions[]>();
+
   function updateSettings(newSettings: IDiagnosticLineSettings) {
     settings = newSettings;
 
@@ -58,6 +60,9 @@ export function createDiagnosticLine() {
     lineDecorators.set(DiagnosticSeverity.Error, errorDeco);
     lineDecorators.set(DiagnosticSeverity.Warning, warnDeco);
     disposables.push(errorDeco, warnDeco);
+
+    categorizedOpts.clear();
+    for (const k of lineDecorators.keys()) categorizedOpts.set(k, []);
   }
 
   function updateForTextDocument(uri: Uri, opts: ILineOptions[]) {
@@ -70,9 +75,7 @@ export function createDiagnosticLine() {
     const opts = lineOpts.get(uri.path);
     if (!active || !opts || active.document.uri.path !== uri.path) return;
 
-    const categorizedOpts = new Map(
-      Array.from(lineDecorators.keys(), (k) => [k, [] as DecorationOptions[]]),
-    );
+    for (const arr of categorizedOpts.values()) arr.length = 0;
 
     for (const { severity, message: rawMessage, range } of opts) {
       if (!categorizedOpts.has(severity)) continue;

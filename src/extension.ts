@@ -16,6 +16,8 @@ import { createGutterDecorators } from "./gutter";
 
 export let activationDuration = -1;
 
+const EMPTY_DECO_OPTS: DecorationOptions[] = [];
+
 export function activate(context: ExtensionContext) {
   const _activateStart = performance.now();
   const gutters = createGutterDecorators(context);
@@ -34,6 +36,14 @@ export function activate(context: ExtensionContext) {
   ];
 
   let gutterEnabled = true;
+
+  const severityMap = new Map<DiagnosticSeverity, DecorationOptions[]>([
+    [DiagnosticSeverity.Error, []],
+    [DiagnosticSeverity.Warning, []],
+    [DiagnosticSeverity.Information, []],
+    [DiagnosticSeverity.Hint, []],
+  ]);
+  const lineOptions: ILineOptions[] = [];
 
   function updateSettings() {
     const config = workspace.getConfiguration("inline-markers");
@@ -55,13 +65,8 @@ export function activate(context: ExtensionContext) {
     if (!editor) return;
 
     const diagnostics = languages.getDiagnostics(editor.document.uri);
-    const severityMap = new Map<DiagnosticSeverity, DecorationOptions[]>([
-      [DiagnosticSeverity.Error, []],
-      [DiagnosticSeverity.Warning, []],
-      [DiagnosticSeverity.Information, []],
-      [DiagnosticSeverity.Hint, []],
-    ]);
-    const lineOptions: ILineOptions[] = [];
+    for (const arr of severityMap.values()) arr.length = 0;
+    lineOptions.length = 0;
 
     for (const d of diagnostics) {
       severityMap.get(d.severity)?.push({ range: d.range, hoverMessage: d.message });
@@ -73,9 +78,8 @@ export function activate(context: ExtensionContext) {
       });
     }
 
-    const empty: DecorationOptions[] = [];
     for (const [gutter, severity] of gutterPairs) {
-      editor.setDecorations(gutter, gutterEnabled ? severityMap.get(severity)! : empty);
+      editor.setDecorations(gutter, gutterEnabled ? severityMap.get(severity)! : EMPTY_DECO_OPTS);
     }
 
     diagLine.updateForTextDocument(editor.document.uri, lineOptions);
