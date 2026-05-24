@@ -14,7 +14,10 @@ import { createBetterComments } from "./comments";
 import { ILineOptions, createDiagnosticLine } from "./diagnostic-line";
 import { createGutterDecorators } from "./gutter";
 
+export let activationDuration = -1;
+
 export function activate(context: ExtensionContext) {
+  const _activateStart = performance.now();
   const gutters = createGutterDecorators(context);
   context.subscriptions.push({ dispose: () => gutters.dispose() });
 
@@ -108,6 +111,8 @@ export function activate(context: ExtensionContext) {
   );
 
   scheduleUpdate(true);
+  activationDuration = performance.now() - _activateStart;
+  return { activationDuration };
 }
 
 export function deactivate() {
