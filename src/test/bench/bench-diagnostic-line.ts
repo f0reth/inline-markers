@@ -45,5 +45,5 @@ export async function runDiagnosticLineBench() {
   }
 
   diagLine.dispose();
-  printResults(results);
+  printResults(results, "diagnostic-line");
 }

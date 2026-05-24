@@ -35,5 +35,5 @@ export async function runGutterBench() {
   }
 
   gutter.dispose();
-  printResults(results);
+  printResults(results, "gutter");
 }

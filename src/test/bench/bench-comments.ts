@@ -40,5 +40,5 @@ export async function runCommentsBench() {
   }
 
   better.dispose();
-  printResults(results);
+  printResults(results, "comments");
 }

@@ -69,5 +69,5 @@ export async function runAllBench() {
   better.dispose();
   gutter.dispose();
   diagLine.dispose();
-  printResults(results);
+  printResults(results, "all");
 }

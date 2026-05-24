@@ -54,7 +54,7 @@ function buildMarkdown(results: BenchResult[]): string {
   return `${header}${tableHeader}${rows}\n`;
 }
 
-export function printResults(results: BenchResult[]) {
+export function printResults(results: BenchResult[], name: string) {
   const COL = 52;
   console.log("\n=== Benchmark Results ===");
   console.log(
@@ -68,14 +68,21 @@ export function printResults(results: BenchResult[]) {
   }
   console.log("=".repeat(COL + 44));
 
+  const projectRoot = path.resolve(__dirname, "../../..");
+  const outDir = path.join(projectRoot, "bench-results");
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const timestamp = new Date().toISOString().replace(/:/g, "-").replace(/\..+/, "");
+  const baseName = `${timestamp}-${name}`;
+
   if (process.env["BENCH_JSON"] === "1") {
-    const outPath = path.join(process.cwd(), "bench-results.json");
+    const outPath = path.join(outDir, `${baseName}.json`);
     fs.writeFileSync(outPath, JSON.stringify(results, null, 2));
     console.log(`\n[bench] Results saved to ${outPath}`);
   }
 
   const md = buildMarkdown(results);
-  const mdPath = path.join(process.cwd(), "bench-results.md");
+  const mdPath = path.join(outDir, `${baseName}.md`);
   fs.writeFileSync(mdPath, md);
   console.log(`[bench] Markdown results saved to ${mdPath}`);
 }
