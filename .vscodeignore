@@ -16,3 +16,5 @@ vsc-extension-quickstart.md
 .oxlintrc.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
+bench-results.json
+bench-results.md

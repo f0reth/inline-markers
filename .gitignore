@@ -23,3 +23,7 @@ Thumbs.db
 *.local.js
 *.local.ts
 
+# Benchmark output
+bench-results.json
+bench-results.md
+
