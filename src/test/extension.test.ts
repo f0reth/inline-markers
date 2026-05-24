@@ -114,6 +114,36 @@ suite("Extension Test Suite", () => {
         assert.strictEqual(pat.exec("just a regular line"), null);
         assert.strictEqual(pat.exec("some todo in text"), null);
       });
+
+      test("matches indented // TODO:", () => {
+        assert.ok(pat.exec("    // TODO: indented"), "indented should match");
+      });
+
+      test("matches //TODO: with no space between // and keyword", () => {
+        assert.ok(pat.exec("//TODO: no space"), "no-space variant should match");
+      });
+
+      test("matches // TODO- (dash separator)", () => {
+        assert.ok(pat.exec("// TODO- message"), "dash separator should match");
+      });
+
+      test("matches // TODO (keyword only, no separator)", () => {
+        assert.ok(pat.exec("// TODO"), "keyword-only should match");
+      });
+
+      test("matches // TODO: with empty message (m[2] is empty string)", () => {
+        const m = pat.exec("// TODO:");
+        assert.ok(m, "should match");
+        assert.strictEqual(m[2], "");
+      });
+
+      test("matches block comment middle line * TODO:", () => {
+        assert.ok(pat.exec("   * TODO: in block"), "block comment middle line should match");
+      });
+
+      test("does not match URL-like line without comment prefix", () => {
+        assert.strictEqual(pat.exec("https://example.com"), null);
+      });
     });
 
     suite("fixme", () => {
@@ -137,6 +167,26 @@ suite("Extension Test Suite", () => {
 
       test("does not match plain text", () => {
         assert.strictEqual(pat.exec("no fixme here"), null);
+      });
+
+      test("matches // FIXME- (dash separator)", () => {
+        assert.ok(pat.exec("// FIXME- broken"), "dash separator should match");
+      });
+
+      test("matches // FIXME (keyword only)", () => {
+        assert.ok(pat.exec("// FIXME"), "keyword-only should match");
+      });
+
+      test("matches //FIXME: with no space", () => {
+        assert.ok(pat.exec("//FIXME: no space"), "no-space variant should match");
+      });
+
+      test("matches <!-- FIXME: --> (HTML comment)", () => {
+        assert.ok(pat.exec("<!-- FIXME: html -->"), "HTML comment should match");
+      });
+
+      test("matches -- FIXME: (SQL comment)", () => {
+        assert.ok(pat.exec("-- FIXME: sql"), "SQL comment should match");
       });
     });
 
@@ -164,6 +214,33 @@ suite("Extension Test Suite", () => {
         assert.strictEqual(pat.exec("regular line"), null);
         assert.strictEqual(pat.exec("important note"), null);
       });
+
+      test("matches <!-- ! --> (HTML comment)", () => {
+        assert.ok(pat.exec("<!-- ! html important -->"), "HTML comment should match");
+      });
+
+      test("matches -- ! (SQL comment)", () => {
+        assert.ok(pat.exec("-- ! sql"), "SQL comment should match");
+      });
+
+      test("matches /* ! */ (block comment)", () => {
+        assert.ok(pat.exec("/* ! block */"), "block comment should match");
+      });
+
+      test("matches indented // !", () => {
+        assert.ok(pat.exec("    // ! indented"), "indented should match");
+      });
+
+      test("matches // !! (double exclamation mark)", () => {
+        assert.ok(pat.exec("// !!"), "double exclamation should match");
+      });
+
+      test("matches //! (no space, m[1]=! m[2]=empty)", () => {
+        const m = pat.exec("//!");
+        assert.ok(m, "no-space variant should match");
+        assert.strictEqual(m[1], "!");
+        assert.strictEqual(m[2], "");
+      });
     });
 
     suite("question (?)", () => {
@@ -183,6 +260,26 @@ suite("Extension Test Suite", () => {
       test("does not match plain text", () => {
         assert.strictEqual(pat.exec("no comment here"), null);
       });
+
+      test("matches <!-- ? --> (HTML comment)", () => {
+        assert.ok(pat.exec("<!-- ? question -->"), "HTML comment should match");
+      });
+
+      test("matches -- ? (SQL comment)", () => {
+        assert.ok(pat.exec("-- ? sql"), "SQL comment should match");
+      });
+
+      test("matches /* ? */ (block comment)", () => {
+        assert.ok(pat.exec("/* ? block */"), "block comment should match");
+      });
+
+      test("matches indented // ?", () => {
+        assert.ok(pat.exec("    // ? indented"), "indented should match");
+      });
+
+      test("matches // ?? (double question mark)", () => {
+        assert.ok(pat.exec("// ??"), "double question mark should match");
+      });
     });
 
     suite("highlight (*)", () => {
@@ -201,6 +298,34 @@ suite("Extension Test Suite", () => {
 
       test("does not match plain text without comment prefix", () => {
         assert.strictEqual(pat.exec("no highlight here"), null);
+      });
+
+      test("matches <!-- * --> (HTML comment)", () => {
+        assert.ok(pat.exec("<!-- * html -->"), "HTML comment should match");
+      });
+
+      test("matches -- * (SQL comment)", () => {
+        assert.ok(pat.exec("-- * sql"), "SQL comment should match");
+      });
+
+      test("matches /* * */ (block comment)", () => {
+        assert.ok(pat.exec("/* * block */"), "block comment should match");
+      });
+
+      test("matches indented // *", () => {
+        assert.ok(pat.exec("    // * indented"), "indented should match");
+      });
+
+      test("matches // ** (double star)", () => {
+        assert.ok(pat.exec("// **"), "double star should match");
+      });
+
+      test("does not match markdown list line '* item'", () => {
+        assert.strictEqual(pat.exec("* item"), null);
+      });
+
+      test("does not match block comment close '*/'", () => {
+        assert.strictEqual(pat.exec("*/"), null);
       });
     });
   });
