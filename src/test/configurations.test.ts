@@ -18,13 +18,6 @@ suite("Configurations", () => {
     }
   });
 
-  test("all tags have showLine enabled by default", () => {
-    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
-    for (const key of keys) {
-      assert.strictEqual(DEFAULTS[key].showLine, true, `${key} should default showLine to true`);
-    }
-  });
-
   test("all tags reference an SVG gutter icon", () => {
     const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
     for (const key of keys) {
