@@ -14,13 +14,19 @@ import { DEFAULTS } from "./configurations";
 import { CommentTagKey, LocalTagConfig } from "./types";
 
 const PATTERNS: Record<CommentTagKey, RegExp> = {
+  // matches: // TODO: … / // FIXME: … (case-insensitive; captured by the "todo" key)
   todo: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*((?:TODO|FIXME)\b[:-]?)\s*(.*)/i,
+  // matches: // FIXME: … (case-insensitive; narrower than todo — fixme-only)
   fixme: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(FIXME\b[:-]?)\s*(.*)/i,
+  // matches: // ! …
   important: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(!)(?=\s|$)\s*(.*)/,
+  // matches: // ? …
   question: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\?)(?=\s|$)\s*(.*)/,
+  // matches: // * …
   highlight: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)(?=\s|$)\s*(.*)/,
 };
 
+// strips trailing block-comment closers (*/, -->) before storing the message text
 const TRAIL_RE = /(?:\s*\*+\/|\s*-->)\s*$/;
 
 export function createBetterComments(context: ContextLike) {
@@ -39,6 +45,7 @@ export function createBetterComments(context: ContextLike) {
   let activeKeys: Key[] = [];
   let excludeLanguages: string[] = ["markdown", "mdx"];
 
+  // order determines match priority: earlier keys win when multiple patterns could match a line
   const TAG_KEYS: Key[] = ["important", "fixme", "todo", "question", "highlight"];
 
   const perTagOpts = new Map<Key, DecorationOptions[]>();

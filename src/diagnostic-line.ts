@@ -87,6 +87,7 @@ export function createDiagnosticLine() {
 
       categorizedOpts.get(severity)?.push({
         range,
+        // \u00a0 = non-breaking space \u2014 prevents VS Code from trimming leading/trailing whitespace
         renderOptions: { after: { contentText: `\u00a0${message}\u00a0` } },
       });
     }
