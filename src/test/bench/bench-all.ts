@@ -56,7 +56,7 @@ export async function runAllBench() {
     const result = await measure(
       `all features (${lineCount} lines, ${lineCount} diagnostics)`,
       () => {
-        better.analyzeDocument(uri);
+        better.analyzeDocument(doc);
         better.showForDocument(uri);
         editor.setDecorations(gutter.errorGutter, gutterRanges);
         diagLine.updateForTextDocument(uri, diagOpts);

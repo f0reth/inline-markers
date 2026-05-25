@@ -67,7 +67,7 @@ suite("BetterComments — removeForDocument", () => {
       content: "// TODO: something",
       language: "typescript",
     });
-    bc.analyzeDocument(doc.uri);
+    bc.analyzeDocument(doc);
     assert.doesNotThrow(() => bc.removeForDocument(doc.uri));
     bc.dispose();
   });
@@ -90,10 +90,13 @@ suite("BetterComments — showForDocument", () => {
 });
 
 suite("BetterComments — analyzeDocument", () => {
-  test("does not throw when URI is not in workspace.textDocuments", () => {
+  test("does not throw for a basic TypeScript document", async () => {
     const bc = createBetterComments(stubContext);
-    const uri = vscode.Uri.file("/test/nonexistent.ts");
-    assert.doesNotThrow(() => bc.analyzeDocument(uri));
+    const doc = await vscode.workspace.openTextDocument({
+      content: "const x = 1;",
+      language: "typescript",
+    });
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -103,7 +106,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "<!-- TODO: excluded -->",
       language: "markdown",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -113,7 +116,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "// TODO: fix this",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -123,7 +126,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "// FIXME: broken",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -133,7 +136,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "// ! important note",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -143,7 +146,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "// ? what does this do",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -153,7 +156,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "// * highlighted",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -163,7 +166,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -173,7 +176,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "const x = 1;\nconst y = 2;",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -183,7 +186,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "// TODO: FIXME: both tags",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -193,7 +196,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "/* TODO: fix */",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -203,7 +206,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "<!-- TODO: fix -->",
       language: "html",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -213,7 +216,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "// TODO:",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -223,7 +226,7 @@ suite("BetterComments — analyzeDocument", () => {
       content: "// ! alert here",
       language: "typescript",
     });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc.uri));
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
   });
 
@@ -234,9 +237,9 @@ suite("BetterComments — analyzeDocument", () => {
       language: "typescript",
     });
     assert.doesNotThrow(() => {
-      bc.analyzeDocument(doc.uri);
-      bc.analyzeDocument(doc.uri);
-      bc.analyzeDocument(doc.uri);
+      bc.analyzeDocument(doc);
+      bc.analyzeDocument(doc);
+      bc.analyzeDocument(doc);
     });
     bc.dispose();
   });

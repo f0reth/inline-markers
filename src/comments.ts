@@ -2,6 +2,7 @@ import {
   DecorationOptions,
   ExtensionContext,
   Range,
+  TextDocument,
   TextEditorDecorationType,
   Uri,
   window,
@@ -51,13 +52,11 @@ export function createBetterComments(context: ContextLike) {
   const perTagOpts = new Map<Key, DecorationOptions[]>();
   const clearOpts: DecorationOptions[] = [];
 
-  function analyzeDocument(uri: Uri) {
+  function analyzeDocument(doc: TextDocument) {
     if (!configs) return;
-    const doc = workspace.textDocuments.find((d) => d.uri.path === uri.path);
-    if (!doc) return;
 
     if (excludeLanguages.includes(doc.languageId)) {
-      tagLineOptions.delete(uri.path);
+      tagLineOptions.delete(doc.uri.path);
       return;
     }
 
@@ -82,7 +81,7 @@ export function createBetterComments(context: ContextLike) {
         break;
       }
     }
-    tagLineOptions.set(uri.path, results);
+    tagLineOptions.set(doc.uri.path, results);
   }
 
   function showForDocument(uri: Uri) {
@@ -148,7 +147,7 @@ export function createBetterComments(context: ContextLike) {
     for (const k of tagDecorators.keys()) perTagOpts.set(k, []);
 
     for (const doc of workspace.textDocuments) {
-      analyzeDocument(doc.uri);
+      analyzeDocument(doc);
     }
   }
 

@@ -89,7 +89,7 @@ export function activate(context: ExtensionContext) {
   function updateAll(editor: TextEditor | undefined) {
     if (!editor) return;
     updateDiagnosticsOnly(editor);
-    better.analyzeDocument(editor.document.uri);
+    better.analyzeDocument(editor.document);
     better.showForDocument(editor.document.uri);
   }
 

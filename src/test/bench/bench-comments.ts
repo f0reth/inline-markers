@@ -31,10 +31,9 @@ export async function runCommentsBench() {
     const src = makeSource(lineCount);
     const doc = await vscode.workspace.openTextDocument({ content: src, language: "typescript" });
     await vscode.window.showTextDocument(doc);
-    const { uri } = doc;
 
     const result = await measure(`comments analyzeDocument (${lineCount} lines)`, () => {
-      better.analyzeDocument(uri);
+      better.analyzeDocument(doc);
     });
     results.push(result);
   }
