@@ -1,5 +1,23 @@
 # Change Log
 
+## [0.0.6] - 2026-05-25
+
+### Performance
+
+- **Hot path optimization**: Reuse `Map` and array objects across calls to reduce GC pressure.
+- **analyzeDocument signature**: Accept `TextDocument` directly instead of extracting text, avoiding unnecessary string allocation.
+
+### Fixed
+
+- **Array reset**: Replace `arr.length = 0` with fresh array assignments in `showLineDecoratorForDocument` to avoid mutation side effects.
+
+### Internal
+
+- Add `TagMatch` type alias and tighten null assertions in `comments.ts`.
+- Tighten null assertions in `diagnostic-line.ts`.
+- Replace `forEach` with `for-of` in `gutter.ts`.
+- Add inline comments for regex patterns and constants.
+
 ## [0.0.5] - 2026-05-24
 
 ### Added
