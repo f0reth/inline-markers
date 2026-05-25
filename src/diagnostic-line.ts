@@ -93,8 +93,7 @@ export function createDiagnosticLine() {
     }
 
     for (const [severity, deco] of lineDecorators.entries()) {
-      const decOpts = categorizedOpts.get(severity) || [];
-      active.setDecorations(deco, decOpts);
+      active.setDecorations(deco, categorizedOpts.get(severity)!);
     }
   }
 
