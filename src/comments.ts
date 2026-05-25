@@ -32,15 +32,13 @@ const TRAIL_RE = /(?:\s*\*+\/|\s*-->)\s*$/;
 
 export function createBetterComments(context: ContextLike) {
   type Key = CommentTagKey;
+  type TagMatch = { key: Key; message: string; range: Range; tagRange: Range };
 
   const tagDecorators = new Map<Key, TextEditorDecorationType>();
   const clearBackgroundDeco = window.createTextEditorDecorationType({
     backgroundColor: "transparent",
   });
-  const tagLineOptions = new Map<
-    string,
-    { key: Key; message: string; range: Range; tagRange: Range }[]
-  >();
+  const tagLineOptions = new Map<string, TagMatch[]>();
 
   let configs: Record<Key, LocalTagConfig> | undefined;
   let activeKeys: Key[] = [];
@@ -60,7 +58,7 @@ export function createBetterComments(context: ContextLike) {
       return;
     }
 
-    const results: { key: Key; message: string; range: Range; tagRange: Range }[] = [];
+    const results: TagMatch[] = [];
 
     for (let i = 0; i < doc.lineCount; i++) {
       const { text, range } = doc.lineAt(i);
@@ -91,15 +89,15 @@ export function createBetterComments(context: ContextLike) {
     for (const arr of perTagOpts.values()) arr.length = 0;
     clearOpts.length = 0;
 
-    const arr = tagLineOptions.get(uri.path) || [];
+    const arr = tagLineOptions.get(uri.path) ?? [];
 
     for (const item of arr) {
-      perTagOpts.get(item.key)?.push({ range: item.range, hoverMessage: item.message });
+      perTagOpts.get(item.key)!.push({ range: item.range, hoverMessage: item.message });
       clearOpts.push({ range: item.tagRange });
     }
 
     for (const [key, deco] of tagDecorators.entries()) {
-      active.setDecorations(deco, perTagOpts.get(key) || []);
+      active.setDecorations(deco, perTagOpts.get(key) ?? []);
     }
     active.setDecorations(clearBackgroundDeco, clearOpts);
   }
