@@ -53,6 +53,16 @@
       "label": "tasks: watch-tests",
       "dependsOn": ["npm: watch", "npm: watch-tests"],
       "problemMatcher": []
+    },
+    {
+      "label": "compile",
+      "type": "shell",
+      "command": "node esbuild.js",
+      "problemMatcher": [],
+      "group": "build",
+      "presentation": {
+        "reveal": "silent"
+      }
     }
   ]
 }
