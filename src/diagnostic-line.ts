@@ -1,5 +1,6 @@
 import {
   DecorationOptions,
+  DecorationRangeBehavior,
   DiagnosticSeverity,
   Disposable,
   Range,
@@ -52,6 +53,7 @@ export function createDiagnosticLine() {
     const createDeco = (bgColor: string, color: string) =>
       window.createTextEditorDecorationType({
         after: { margin: "0 0 0 30px", backgroundColor: bgColor, color },
+        rangeBehavior: DecorationRangeBehavior.ClosedOpen,
       });
 
     const errorDeco = createDeco(settings.errorLabelBg, settings.errFontColor);
