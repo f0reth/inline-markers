@@ -46,4 +46,32 @@ suite("GutterDecorators — API", () => {
       gutters.dispose();
     });
   });
+
+  test("createGutterDecorators calls asAbsolutePath with the 4 expected SVG icon paths", () => {
+    const calls: string[] = [];
+    const spyContext = {
+      asAbsolutePath: (p: string) => {
+        calls.push(p);
+        return p;
+      },
+    };
+    const gutters = createGutterDecorators(spyContext);
+    assert.ok(
+      calls.some((p) => p.includes("error.svg")),
+      "error.svg should be resolved",
+    );
+    assert.ok(
+      calls.some((p) => p.includes("warn.svg")),
+      "warn.svg should be resolved",
+    );
+    assert.ok(
+      calls.some((p) => p.includes("info.svg")),
+      "info.svg should be resolved",
+    );
+    assert.ok(
+      calls.some((p) => p.includes("hint.svg")),
+      "hint.svg should be resolved",
+    );
+    gutters.dispose();
+  });
 });
