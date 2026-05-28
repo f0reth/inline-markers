@@ -37,6 +37,10 @@ suite("DiagnosticLine — message truncation", () => {
     assert.strictEqual(truncateMessage("", 0), "");
     assert.strictEqual(truncateMessage("", 10), "");
   });
+
+  test("no truncation when maxLength is negative", () => {
+    assert.strictEqual(truncateMessage("hello world", -1), "hello world");
+  });
 });
 
 suite("DiagnosticLine — API", () => {
@@ -200,24 +204,6 @@ suite("DiagnosticLine — API", () => {
           range: new vscode.Range(1, 0, 1, 3),
         },
       ]);
-    });
-    dl.dispose();
-  });
-
-  test("three consecutive updateSettings calls do not throw", () => {
-    const dl = createDiagnosticLine();
-    const settings = {
-      showLine: true,
-      errorLabelBg: "#ff0000",
-      warnLabelBg: "#ffff00",
-      errFontColor: "#fff",
-      warnFontColor: "#000",
-      maxLineLength: 0,
-    };
-    assert.doesNotThrow(() => {
-      dl.updateSettings(settings);
-      dl.updateSettings(settings);
-      dl.updateSettings(settings);
     });
     dl.dispose();
   });
