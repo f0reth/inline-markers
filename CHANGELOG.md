@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.0.7] - 2026-05-29
+
+### Fixed
+
+- **Inline diagnostic flicker**: Inline diagnostic messages no longer flicker while typing. Previously, the message would briefly disappear and reappear before the 200ms debounce updated the decoration.
+
+### Internal
+
+- **Debug launch fix**: Added a one-shot `compile` build task so that pressing F5 to launch the extension in debug mode works without a running watch task.
+
 ## [0.0.6] - 2026-05-25
 
 ### Performance
