@@ -1,5 +1,8 @@
 import * as assert from "node:assert";
 
+// Mirrors TRAIL_RE from comments.ts for isolated testing
+const TRAIL_RE = /(?:\s*\*+\/|\s*-->)\s*$/;
+
 // Mirrors PATTERNS from comments.ts (not exported) for isolated regex testing
 const COMMENT_PATTERNS = {
   todo: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*((?:TODO|FIXME)\b[:-]?)\s*(.*)/i,
@@ -8,6 +11,24 @@ const COMMENT_PATTERNS = {
   question: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\?)(?=\s|$)\s*(.*)/,
   highlight: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)(?=\s|$)\s*(.*)/,
 };
+
+suite("TRAIL_RE — trailing block comment closer stripping", () => {
+  test("strips trailing */", () => {
+    assert.strictEqual("block comment */".replace(TRAIL_RE, "").trim(), "block comment");
+  });
+  test("strips trailing */ with whitespace", () => {
+    assert.strictEqual("message  */  ".replace(TRAIL_RE, "").trim(), "message");
+  });
+  test("strips trailing -->", () => {
+    assert.strictEqual("html comment -->".replace(TRAIL_RE, "").trim(), "html comment");
+  });
+  test("does not strip plain message (no trailing closer)", () => {
+    assert.strictEqual("plain message".replace(TRAIL_RE, ""), "plain message");
+  });
+  test("strips trailing **/ (double star)", () => {
+    assert.ok(!"message **/".replace(TRAIL_RE, "").includes("**/"));
+  });
+});
 
 suite("Comment Patterns", () => {
   suite("todo", () => {
@@ -237,6 +258,14 @@ suite("Comment Patterns", () => {
 
     test("does not match // ?something (tag immediately followed by word)", () => {
       assert.strictEqual(pat.exec("// ?something"), null);
+    });
+  });
+
+  suite("todo — ! prefix absorption", () => {
+    test("todo pattern matches '// ! TODO: msg' (! prefix absorbed by [\\s*!?]*)", () => {
+      const m = COMMENT_PATTERNS.todo.exec("// ! TODO: priority check");
+      assert.ok(m, "should match");
+      assert.ok(m[1].toUpperCase().startsWith("TODO"));
     });
   });
 
