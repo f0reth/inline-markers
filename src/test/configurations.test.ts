@@ -45,4 +45,15 @@ suite("Configurations", () => {
       );
     }
   });
+
+  test("DEFAULTS has exactly 5 keys", () => {
+    assert.strictEqual(Object.keys(DEFAULTS).length, 5);
+  });
+
+  test("DEFAULTS contains all expected CommentTagKeys", () => {
+    const expected = ["todo", "fixme", "important", "question", "highlight"];
+    for (const key of expected) {
+      assert.ok(key in DEFAULTS, `"${key}" should be in DEFAULTS`);
+    }
+  });
 });
