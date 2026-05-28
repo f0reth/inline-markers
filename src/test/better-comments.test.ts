@@ -110,53 +110,19 @@ suite("BetterComments — analyzeDocument", () => {
     bc.dispose();
   });
 
-  test("does not throw for a TypeScript document containing a TODO comment", async () => {
+  test("analyzeDocument does not throw for all 5 comment tag types", async () => {
     const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "// TODO: fix this",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for a TypeScript document containing a FIXME comment", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "// FIXME: broken",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for a TypeScript document containing '!' comment", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "// ! important note",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for a TypeScript document containing '?' comment", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "// ? what does this do",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for a TypeScript document containing '*' comment", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "// * highlighted",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
+    const cases = [
+      { content: "// TODO: fix this", label: "todo" },
+      { content: "// FIXME: broken", label: "fixme" },
+      { content: "// ! important note", label: "important" },
+      { content: "// ? what is this", label: "question" },
+      { content: "// * highlighted", label: "highlight" },
+    ];
+    for (const { content, label } of cases) {
+      const doc = await vscode.workspace.openTextDocument({ content, language: "typescript" });
+      assert.doesNotThrow(() => bc.analyzeDocument(doc), `should not throw for ${label}`);
+    }
     bc.dispose();
   });
 
@@ -190,6 +156,17 @@ suite("BetterComments — analyzeDocument", () => {
     bc.dispose();
   });
 
+  test("analyzeDocument on 'mdx' document does not throw (mdx is in default excludeLanguages)", async () => {
+    const bc = createBetterComments(stubContext);
+    const doc = await vscode.workspace.openTextDocument({
+      content: "// TODO: should be excluded",
+      language: "mdx",
+    });
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
+    bc.dispose();
+  });
+
+  // TRAIL_RE strips trailing */ and --> before storing tag text; covered by the two tests below
   test("does not throw for a block comment line ending with */", async () => {
     const bc = createBetterComments(stubContext);
     const doc = await vscode.workspace.openTextDocument({
@@ -214,16 +191,6 @@ suite("BetterComments — analyzeDocument", () => {
     const bc = createBetterComments(stubContext);
     const doc = await vscode.workspace.openTextDocument({
       content: "// TODO:",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for a line where tag text is present (tagRange populated case)", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "// ! alert here",
       language: "typescript",
     });
     assert.doesNotThrow(() => bc.analyzeDocument(doc));
