@@ -5,11 +5,11 @@ const TRAIL_RE = /(?:\s*\*+\/|\s*-->)\s*$/;
 
 // Mirrors SINGLE_LINE_PATTERNS from comments.ts (no ^ anchor — matches inline comments)
 const SINGLE_LINE_PATTERNS = {
-  todo: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*((?:TODO|FIXME)\b[:-]?)\s*(.*)/i,
-  fixme: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(FIXME\b[:-]?)\s*(.*)/i,
-  important: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(!)(?=\s|$)\s*(.*)/,
-  question: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(\?)(?=\s|$)\s*(.*)/,
-  highlight: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)(?=\s|$)\s*(.*)/,
+  todo: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*((?:TODO|FIXME)\b[:-]?)[ \t]*(.*)/i,
+  fixme: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(FIXME\b[:-]?)[ \t]*(.*)/i,
+  important: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(!)(?=[ \t]|$)([ \t]*.*)/,
+  question: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(\?)(?=[ \t]|$)([ \t]*.*)/,
+  highlight: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(\*)(?=[ \t]|$)([ \t]*.*)/,
 };
 
 // Mirrors BLOCK_INNER_PATTERNS from comments.ts (applied inside multiline /* */ and /** */ blocks)
@@ -279,10 +279,50 @@ suite("SINGLE_LINE_PATTERNS", () => {
   });
 
   suite("todo — ! prefix absorption", () => {
-    test("todo pattern matches '// ! TODO: msg' ([\\s*!?]* absorbs ! prefix)", () => {
+    test("todo pattern matches '// ! TODO: msg' ([ \\t*!?]* absorbs ! prefix)", () => {
       const m = SINGLE_LINE_PATTERNS.todo.exec("// ! TODO: priority check");
       assert.ok(m, "should match");
       assert.ok(m[1].toUpperCase().startsWith("TODO"));
+    });
+  });
+
+  suite("newline-crossing prevention", () => {
+    test("todo: match does not span into next line after '// TODO'", () => {
+      const text = "// TODO\nnext line content";
+      const m = SINGLE_LINE_PATTERNS.todo.exec(text);
+      assert.ok(m, "should match TODO on first line");
+      // m[0] must not contain a newline
+      assert.ok(!m[0].includes("\n"), "match should not cross newline");
+    });
+
+    test("todo: match range ends at line boundary for '// TODO: fix'", () => {
+      const text = "// TODO: fix\nnext line";
+      const m = SINGLE_LINE_PATTERNS.todo.exec(text);
+      assert.ok(m, "should match");
+      assert.ok(!m[0].includes("\n"), "match should not cross newline");
+      assert.strictEqual(m[2].trim(), "fix");
+    });
+
+    test("important: '/* ' first line does not match next-line content as decoration", () => {
+      // Block comment open line alone — SINGLE_LINE_PATTERNS should not match
+      // because there is no tag character on this line
+      const firstLine = "/*";
+      assert.strictEqual(SINGLE_LINE_PATTERNS.important.exec(firstLine), null);
+      assert.strictEqual(SINGLE_LINE_PATTERNS.todo.exec(firstLine), null);
+    });
+
+    test("important: match does not cross newline after '// !'", () => {
+      const text = "// !\nnext line";
+      const m = SINGLE_LINE_PATTERNS.important.exec(text);
+      assert.ok(m, "should match");
+      assert.ok(!m[0].includes("\n"), "match should not cross newline");
+    });
+
+    test("highlight: match does not cross newline after '// *'", () => {
+      const text = "// * note\nnext line";
+      const m = SINGLE_LINE_PATTERNS.highlight.exec(text);
+      assert.ok(m, "should match");
+      assert.ok(!m[0].includes("\n"), "match should not cross newline");
     });
   });
 
