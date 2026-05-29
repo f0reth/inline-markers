@@ -20,11 +20,11 @@ const TAG_KEYS: CommentTagKey[] = ["important", "fixme", "todo", "question", "hi
 // single-line comment patterns (no ^ anchor — matches inline comments too)
 // \/\*+ handles single-line block comments like /* TODO: fix */
 const SINGLE_LINE_PATTERNS: Record<CommentTagKey, RegExp> = {
-  todo: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*((?:TODO|FIXME)\b[:-]?)\s*(.*)/i,
-  fixme: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(FIXME\b[:-]?)\s*(.*)/i,
-  important: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(!)(?=\s|$)\s*(.*)/,
-  question: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(\?)(?=\s|$)\s*(.*)/,
-  highlight: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)(?=\s|$)\s*(.*)/,
+  todo: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*((?:TODO|FIXME)\b[:-]?)[ \t]*(.*)/i,
+  fixme: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(FIXME\b[:-]?)[ \t]*(.*)/i,
+  important: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(!)(?=[ \t]|$)([ \t]*.*)/,
+  question: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(\?)(?=[ \t]|$)([ \t]*.*)/,
+  highlight: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(\*)(?=[ \t]|$)([ \t]*.*)/,
 };
 
 // block comment inner-line patterns (applied per-line inside /* */ and /** */ blocks)
