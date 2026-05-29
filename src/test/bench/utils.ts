@@ -1,6 +1,16 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import * as vscode from "vscode";
+
+export async function loadFixtureDocuments(): Promise<vscode.TextDocument[]> {
+  const fixtureDir = path.join(__dirname, "fixtures");
+  const files = fs.readdirSync(fixtureDir).filter((f) => f.endsWith(".ts"));
+  return Promise.all(
+    files.map((f) => vscode.workspace.openTextDocument(vscode.Uri.file(path.join(fixtureDir, f)))),
+  );
+}
+
 export interface BenchResult {
   label: string;
   avg: number;
