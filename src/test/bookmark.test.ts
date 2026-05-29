@@ -6,16 +6,17 @@ import { applyShift, createBookmarkManager } from "../bookmark";
 import { Bookmark } from "../types";
 
 function makeContext() {
-  const store = new Map<string, Bookmark[]>();
+  const store = new Map<string, unknown>();
   return {
     asAbsolutePath: (p: string) => p,
     workspaceState: {
       keys: (): readonly string[] => [...store.keys()],
       get: <T>(key: string, defaultValue?: T): T => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         return (store.has(key) ? store.get(key) : defaultValue) as T;
       },
       update: (key: string, value: unknown): Thenable<void> => {
-        store.set(key, value as Bookmark[]);
+        store.set(key, value);
         return Promise.resolve();
       },
     },

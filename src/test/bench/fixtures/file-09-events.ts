@@ -27,16 +27,19 @@ export class EventEmitter<Events extends EventMap> {
       );
       return this;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     set.add(listener as EventListener<Events[keyof Events]>);
     return this;
   }
 
   once<K extends keyof Events>(event: K, listener: EventListener<Events[K]>): this {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     this.onceSet.add(listener as EventListener<Events[keyof Events]>);
     return this.on(event, listener);
   }
 
   off<K extends keyof Events>(event: K, listener: EventListener<Events[K]>): this {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     this.listeners.get(event)?.delete(listener as EventListener<Events[keyof Events]>);
     return this;
   }

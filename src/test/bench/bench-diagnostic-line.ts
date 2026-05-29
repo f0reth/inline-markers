@@ -49,15 +49,15 @@ export async function runDiagnosticLineBench() {
   const multiFileResult = await measure(
     `diagnostic-line updateForDoc+showLine (10 files, ${totalLines} lines)`,
     () => {
-      for (const doc of fixtureDocs) {
-        const opts: ILineOptions[] = Array.from({ length: doc.lineCount }, (_, i) => ({
+      for (const fixtureDoc of fixtureDocs) {
+        const opts: ILineOptions[] = Array.from({ length: fixtureDoc.lineCount }, (_, i) => ({
           severity:
             i % 2 === 0 ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning,
           message: `Diagnostic #${i}`,
           range: new vscode.Range(i, 0, i, 0),
         }));
-        diagLine.updateForTextDocument(doc.uri, opts);
-        diagLine.showLineDecoratorForDocument(doc.uri);
+        diagLine.updateForTextDocument(fixtureDoc.uri, opts);
+        diagLine.showLineDecoratorForDocument(fixtureDoc.uri);
       }
     },
   );

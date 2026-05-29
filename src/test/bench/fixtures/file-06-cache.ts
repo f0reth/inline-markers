@@ -130,7 +130,7 @@ export function memoize<A extends unknown[], R>(
   // TODO: expose a way to invalidate individual memoized results
   return (...args: A): R => {
     const key = keyFn(...args);
-    if (cache.has(key)) return cache.get(key) as R;
+    if (cache.has(key)) return cache.get(key)!;
     const result = fn(...args);
     cache.set(key, result);
     return result;

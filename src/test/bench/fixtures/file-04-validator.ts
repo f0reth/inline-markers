@@ -51,9 +51,9 @@ export function maxLength(field: string, max: number): Validator<string> {
 
 // TODO: validate international email formats
 export function email(field: string): Validator<string> {
-  const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return (value) => {
-    if (!pattern.test(value)) {
+    if (!emailRegex.test(value)) {
       return {
         valid: false,
         errors: [{ field, message: `${field} must be a valid email`, code: "email" }],
@@ -106,6 +106,7 @@ export function validateObject<T extends object>(schema: {
 }): Validator<T> {
   return (value) => {
     const errors: ValidationError[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     for (const key of Object.keys(schema) as (keyof T)[]) {
       const validator = schema[key];
       if (!validator) continue;

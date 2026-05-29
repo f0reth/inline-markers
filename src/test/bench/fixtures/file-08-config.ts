@@ -24,7 +24,7 @@ export class ConfigManager<T extends ConfigMap> {
       if (value === undefined) continue;
 
       const validator = this.schema.validators?.[key];
-      if (validator && !validator(value as ConfigValue)) {
+      if (validator && !validator(value)) {
         throw new Error(`Invalid value for config key "${String(key)}": ${String(value)}`);
       }
 
@@ -32,7 +32,7 @@ export class ConfigManager<T extends ConfigMap> {
       this.values[key] = value as T[keyof T];
 
       if (prev !== value) {
-        this.notify(key, value as ConfigValue);
+        this.notify(key, value);
       }
     }
   }
@@ -51,6 +51,7 @@ export class ConfigManager<T extends ConfigMap> {
       this.listeners.set(key, new Set());
     }
     const set = this.listeners.get(key)!;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     const cb = (v: ConfigValue) => listener(v as T[K]);
     set.add(cb);
     return () => set.delete(cb);

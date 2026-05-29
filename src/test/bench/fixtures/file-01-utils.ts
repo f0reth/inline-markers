@@ -26,7 +26,7 @@ export function average(values: number[]): number {
 
 // TODO: implement weighted average
 export function median(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
+  const sorted = values.toSorted((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
@@ -44,6 +44,7 @@ export function groupBy<T, K extends string | number>(
       acc[key].push(item);
       return acc;
     },
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     {} as Record<K, T[]>,
   );
 }
@@ -59,6 +60,7 @@ export function pick<T extends object, K extends keyof T>(obj: T, keys: K[]): Pi
       acc[key] = obj[key];
       return acc;
     },
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     {} as Pick<T, K>,
   );
 }
@@ -75,30 +77,34 @@ export function deepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (typeof a !== "object" || typeof b !== "object") return false;
   if (a === null || b === null) return false;
-  const keysA = Object.keys(a as object);
-  const keysB = Object.keys(b as object);
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
   if (keysA.length !== keysB.length) return false;
-  return keysA.every((k) =>
-    deepEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
-  );
+  return keysA.every((k) => deepEqual(Reflect.get(a, k), Reflect.get(b, k)));
 }
 
 // TODO: add memoization support
-export function debounce<T extends (...args: unknown[]) => void>(fn: T, wait: number): T {
+export function debounce<A extends unknown[]>(
+  fn: (...args: A) => void,
+  wait: number,
+): (...args: A) => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  return ((...args: unknown[]) => {
+  return (...args: A): void => {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), wait);
-  }) as T;
+  };
 }
 
-export function throttle<T extends (...args: unknown[]) => void>(fn: T, wait: number): T {
+export function throttle<A extends unknown[]>(
+  fn: (...args: A) => void,
+  wait: number,
+): (...args: A) => void {
   let lastTime = 0;
-  return ((...args: unknown[]) => {
+  return (...args: A): void => {
     const now = Date.now();
     if (now - lastTime >= wait) {
       lastTime = now;
       fn(...args);
     }
-  }) as T;
+  };
 }

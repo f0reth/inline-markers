@@ -10,7 +10,9 @@ export class Pipeline<T> {
   private readonly steps: PipelineStep<unknown, unknown>[] = [];
 
   pipe<O>(name: string, fn: StepFn<T, O>): Pipeline<O> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     this.steps.push({ name, fn: fn as StepFn<unknown, unknown> });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     return this as unknown as Pipeline<O>;
   }
 
@@ -20,6 +22,7 @@ export class Pipeline<T> {
       // TODO: add per-step timing and expose as pipeline metrics
       current = await step.fn(current);
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     return current as T;
   }
 
@@ -35,6 +38,7 @@ export class Pipeline<T> {
         return { ok: false, error: e instanceof Error ? e : new Error(String(e)), step: step.name };
       }
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     return { ok: true, value: current as T };
   }
 }
