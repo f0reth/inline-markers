@@ -46,6 +46,12 @@ suite("Configurations", () => {
     }
   });
 
+  test("all tags have unique gutterIcon paths", () => {
+    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
+    const icons = keys.map((k) => DEFAULTS[k].gutterIcon);
+    assert.strictEqual(new Set(icons).size, icons.length);
+  });
+
   test("DEFAULTS has exactly 5 keys", () => {
     assert.strictEqual(Object.keys(DEFAULTS).length, 5);
   });
