@@ -22,7 +22,7 @@ const TAG_KEYS: CommentTagKey[] = ["important", "fixme", "todo", "question", "hi
 const SINGLE_LINE_PATTERNS: Record<CommentTagKey, RegExp> = {
   todo: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*((?:TODO|FIXME)\b[:-]?)[ \t]*(.*)/i,
   fixme: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(FIXME\b[:-]?)[ \t]*(.*)/i,
-  important: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(!)(?=[ \t]|$)([ \t]*.*)/,
+  important: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(!)(?=[ \t\n]|$)([ \t]*.*)/,
   question: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(\?)(?=[ \t]|$)([ \t]*.*)/,
   highlight: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(\*)(?=[ \t]|$)([ \t]*.*)/,
 };
