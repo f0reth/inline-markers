@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.0.8] - 2026-05-29
+
+### Added
+
+- **Inline comment support**: Comment tags (e.g. `TODO`, `FIXME`) are now recognized in inline comments — code like `const x = 1; // TODO: fix` is now highlighted correctly.
+- **Block/JSDoc comment support**: Tags inside `/* ... */` and `/** ... */` block comments are now highlighted. Enable or disable via the `inline-markers.comments.multilineComments` setting.
+
+### Fixed
+
+- **Tag highlight range**: Decorations now span from the comment delimiter to the end of the matched tag, instead of covering the entire line.
+- **Single-line patterns crossing newlines**: Tag patterns no longer accidentally match across line boundaries.
+- **IMPORTANT tag at end of line**: The `!` pattern now correctly matches when it appears at the very end of a line (before a newline character).
+
 ## [0.0.7] - 2026-05-29
 
 ### Fixed
