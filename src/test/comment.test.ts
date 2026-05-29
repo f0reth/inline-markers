@@ -426,6 +426,10 @@ suite("BLOCK_INNER_PATTERNS", () => {
     test("does not match TODO-only line", () => {
       assert.strictEqual(pat.exec(" * TODO: not fixme"), null);
     });
+
+    test("is case insensitive (lowercase fixme:)", () => {
+      assert.ok(pat.exec(" * fixme: lowercase"), "lowercase fixme should match");
+    });
   });
 
   suite("important (!)", () => {
@@ -453,6 +457,37 @@ suite("BLOCK_INNER_PATTERNS", () => {
 
     test("matches line with just star tag", () => {
       assert.ok(pat.exec("   * note"), "should match");
+    });
+  });
+
+  suite("question (?)", () => {
+    const pat = BLOCK_INNER_PATTERNS.question;
+
+    test('matches " * ? is this right?"', () => {
+      const m = pat.exec(" * ? is this right?");
+      assert.ok(m, "should match");
+      assert.strictEqual(m[1], "?");
+      assert.strictEqual(m[2].trim(), "is this right?");
+    });
+
+    test('matches line with only "?"', () => {
+      const m = pat.exec("   ?");
+      assert.ok(m, "should match");
+      assert.strictEqual(m[1], "?");
+    });
+
+    test('does not match " * ?word" (no space after ?)', () => {
+      assert.strictEqual(pat.exec(" * ?word"), null);
+    });
+
+    test('does not match " * TODO: not question"', () => {
+      assert.strictEqual(pat.exec(" * TODO: not question"), null);
+    });
+
+    test('matches " * ?" (tag only, no message)', () => {
+      const m = pat.exec(" * ?");
+      assert.ok(m, "should match with no message");
+      assert.strictEqual(m[1], "?");
     });
   });
 });
