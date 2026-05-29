@@ -99,6 +99,12 @@ async function main() {
     });
     await benchCtx.rebuild();
     await benchCtx.dispose();
+
+    const srcFixtures = path.join("src", "test", "bench", "fixtures");
+    const distFixtures = path.join("dist", "test", "bench", "fixtures");
+    if (fs.existsSync(srcFixtures)) {
+      fs.cpSync(srcFixtures, distFixtures, { recursive: true });
+    }
   }
 }
 
