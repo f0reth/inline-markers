@@ -41,6 +41,97 @@
     "typescript": "^6.0.3"
   },
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "inline-markers-bookmarks",
+          "title": "Bookmarks",
+          "icon": "images/bookmark-sidebar.svg"
+        }
+      ]
+    },
+    "views": {
+      "inline-markers-bookmarks": [
+        {
+          "id": "inline-markers.bookmarks",
+          "name": "Bookmarks"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "inline-markers.bookmark.toggle",
+        "title": "Toggle Bookmark",
+        "category": "Inline Markers"
+      },
+      {
+        "command": "inline-markers.bookmark.navigateNext",
+        "title": "Next Bookmark",
+        "category": "Inline Markers"
+      },
+      {
+        "command": "inline-markers.bookmark.navigatePrevious",
+        "title": "Previous Bookmark",
+        "category": "Inline Markers"
+      },
+      {
+        "command": "inline-markers.bookmark.clearAll",
+        "title": "Clear All Bookmarks",
+        "category": "Inline Markers"
+      },
+      {
+        "command": "inline-markers.bookmark.deleteItem",
+        "title": "Delete Bookmark",
+        "category": "Inline Markers"
+      },
+      {
+        "command": "inline-markers.bookmark.clearFile",
+        "title": "Clear File Bookmarks",
+        "category": "Inline Markers"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "inline-markers.bookmark.toggle",
+        "key": "ctrl+alt+k",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "inline-markers.bookmark.navigateNext",
+        "key": "ctrl+alt+l",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "inline-markers.bookmark.navigatePrevious",
+        "key": "ctrl+alt+j",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "inline-markers.bookmark.clearFile",
+        "key": "ctrl+alt+shift+k",
+        "when": "editorTextFocus"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "inline-markers.bookmark.toggle",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "inline-markers.bookmark.deleteItem",
+          "when": "viewItem == bookmarkItem",
+          "group": "inline"
+        },
+        {
+          "command": "inline-markers.bookmark.clearFile",
+          "when": "viewItem == bookmarkFile",
+          "group": "inline"
+        }
+      ]
+    },
     "configuration": {
       "title": "Inline Markers",
       "properties": {
@@ -249,7 +340,8 @@
     }
   },
   "activationEvents": [
-    "onLanguage"
+    "onLanguage",
+    "onView:inline-markers.bookmarks"
   ],
   "engines": {
     "vscode": "^1.115.0"

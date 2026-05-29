@@ -2,17 +2,23 @@ import {
   DecorationOptions,
   DiagnosticSeverity,
   ExtensionContext,
+  Position,
   Range,
+  Selection,
   TextEditor,
   TextEditorDecorationType,
+  Uri,
+  commands,
   languages,
   window,
   workspace,
 } from "vscode";
 
+import { BookmarkFileTreeItem, BookmarkItemTreeItem, createBookmarkManager } from "./bookmark";
 import { createBetterComments } from "./comments";
 import { ILineOptions, createDiagnosticLine } from "./diagnostic-line";
 import { createGutterDecorators } from "./gutter";
+import { Bookmark } from "./types";
 
 export let activationDuration = -1;
 
@@ -27,6 +33,20 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push({ dispose: () => diagLine.dispose() });
 
   const better = createBetterComments(context);
+
+  const bookmarkManager = createBookmarkManager(context);
+  context.subscriptions.push({ dispose: () => bookmarkManager.dispose() });
+
+  const bookmarkTreeView = window.createTreeView("inline-markers.bookmarks", {
+    treeDataProvider: bookmarkManager.treeProvider,
+    showCollapseAll: true,
+  });
+  context.subscriptions.push(bookmarkTreeView);
+  context.subscriptions.push(
+    bookmarkTreeView.onDidChangeVisibility((e) => {
+      bookmarkManager.treeProvider.setVisible(e.visible);
+    }),
+  );
 
   const gutterPairs: [TextEditorDecorationType, DiagnosticSeverity][] = [
     [gutters.errorGutter, DiagnosticSeverity.Error],
@@ -65,11 +85,14 @@ export function activate(context: ExtensionContext) {
     if (!editor) return;
 
     const diagnostics = languages.getDiagnostics(editor.document.uri);
+    const bookmarkedLines = bookmarkManager.getBookmarkedLines(editor.document.uri);
     for (const arr of severityMap.values()) arr.length = 0;
     lineOptions.length = 0;
 
     for (const d of diagnostics) {
-      severityMap.get(d.severity)?.push({ range: d.range, hoverMessage: d.message });
+      if (!bookmarkedLines.has(d.range.start.line)) {
+        severityMap.get(d.severity)?.push({ range: d.range, hoverMessage: d.message });
+      }
       const lineEnd = editor.document.lineAt(d.range.start.line).range.end;
       lineOptions.push({
         severity: d.severity,
@@ -111,9 +134,15 @@ export function activate(context: ExtensionContext) {
   };
 
   context.subscriptions.push(
-    window.onDidChangeActiveTextEditor(() => scheduleUpdate(true)),
+    window.onDidChangeActiveTextEditor((editor) => {
+      bookmarkManager.updateDecorations(editor);
+      scheduleUpdate(true);
+    }),
     workspace.onDidChangeTextDocument((e) => {
       if (e.document === window.activeTextEditor?.document) scheduleUpdate();
+    }),
+    workspace.onDidChangeTextDocument(async (e) => {
+      await bookmarkManager.shiftBookmarks(e.document.uri.toString(), e);
     }),
     workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("inline-markers")) {
@@ -123,6 +152,46 @@ export function activate(context: ExtensionContext) {
     }),
     languages.onDidChangeDiagnostics(() => scheduleDiagnosticsUpdate()),
     { dispose: () => better.dispose() },
+  );
+
+  context.subscriptions.push(
+    commands.registerCommand("inline-markers.bookmark.toggle", async () => {
+      const editor = window.activeTextEditor;
+      if (!editor) return;
+      const { line } = editor.selection.active;
+      await bookmarkManager.toggle(editor.document.uri.toString(), line);
+    }),
+    commands.registerCommand("inline-markers.bookmark.navigateNext", () => {
+      bookmarkManager.navigateNext();
+    }),
+    commands.registerCommand("inline-markers.bookmark.navigatePrevious", () => {
+      bookmarkManager.navigatePrevious();
+    }),
+    commands.registerCommand("inline-markers.bookmark.clearAll", async () => {
+      await bookmarkManager.clearAll();
+    }),
+    commands.registerCommand(
+      "inline-markers.bookmark.deleteItem",
+      async (item: BookmarkItemTreeItem) => {
+        await bookmarkManager.deleteBookmark(item.bookmark);
+      },
+    ),
+    commands.registerCommand(
+      "inline-markers.bookmark.clearFile",
+      async (arg?: BookmarkFileTreeItem) => {
+        const uriStr =
+          arg instanceof BookmarkFileTreeItem
+            ? arg.bookmarkUri
+            : window.activeTextEditor?.document.uri.toString();
+        if (!uriStr) return;
+        await bookmarkManager.clearFile(uriStr);
+      },
+    ),
+    commands.registerCommand("inline-markers.bookmark._jump", async (bookmark: Bookmark) => {
+      await window.showTextDocument(Uri.parse(bookmark.uri), {
+        selection: new Selection(new Position(bookmark.line, 0), new Position(bookmark.line, 0)),
+      });
+    }),
   );
 
   scheduleUpdate(true);
