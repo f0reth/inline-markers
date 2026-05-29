@@ -1,5 +1,11 @@
 export type CommentTagKey = "todo" | "fixme" | "important" | "question" | "highlight";
 
+export interface Bookmark {
+  uri: string;
+  line: number;
+  label?: string;
+}
+
 export interface LocalTagConfig {
   pattern?: RegExp;
   color: string;
