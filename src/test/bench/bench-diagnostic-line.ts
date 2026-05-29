@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
 import { ILineOptions, createDiagnosticLine } from "../../diagnostic-line";
-import { BenchResult, measure, printResults } from "./utils";
+import { BenchResult, loadFixtureDocuments, measure, printResults } from "./utils";
 
 function makeDiagnosticOpts(count: number, lineCount: number): ILineOptions[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -43,6 +43,25 @@ export async function runDiagnosticLineBench() {
     );
     results.push(result);
   }
+
+  const fixtureDocs = await loadFixtureDocuments();
+  const totalLines = fixtureDocs.reduce((s, d) => s + d.lineCount, 0);
+  const multiFileResult = await measure(
+    `diagnostic-line updateForDoc+showLine (10 files, ${totalLines} lines)`,
+    () => {
+      for (const doc of fixtureDocs) {
+        const opts: ILineOptions[] = Array.from({ length: doc.lineCount }, (_, i) => ({
+          severity:
+            i % 2 === 0 ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning,
+          message: `Diagnostic #${i}`,
+          range: new vscode.Range(i, 0, i, 0),
+        }));
+        diagLine.updateForTextDocument(doc.uri, opts);
+        diagLine.showLineDecoratorForDocument(doc.uri);
+      }
+    },
+  );
+  results.push(multiFileResult);
 
   diagLine.dispose();
   printResults(results, "diagnostic-line");

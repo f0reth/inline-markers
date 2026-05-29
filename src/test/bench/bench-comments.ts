@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
 import { createBetterComments } from "../../comments";
-import { BenchResult, measure, printResults } from "./utils";
+import { BenchResult, loadFixtureDocuments, measure, printResults } from "./utils";
 
 function makeSource(lines: number): string {
   const parts: string[] = [];
@@ -37,6 +37,18 @@ export async function runCommentsBench() {
     });
     results.push(result);
   }
+
+  const fixtureDocs = await loadFixtureDocuments();
+  const totalLines = fixtureDocs.reduce((s, d) => s + d.lineCount, 0);
+  const multiFileResult = await measure(
+    `comments analyzeDocument (10 files, ${totalLines} lines)`,
+    () => {
+      for (const doc of fixtureDocs) {
+        better.analyzeDocument(doc);
+      }
+    },
+  );
+  results.push(multiFileResult);
 
   better.dispose();
   printResults(results, "comments");

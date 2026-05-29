@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
 import { createGutterDecorators } from "../../gutter";
-import { BenchResult, measure, printResults } from "./utils";
+import { BenchResult, loadFixtureDocuments, measure, printResults } from "./utils";
 
 function makeDiagnosticRanges(count: number): vscode.DecorationOptions[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -33,6 +33,25 @@ export async function runGutterBench() {
     });
     results.push(result);
   }
+
+  const fixtureDocs = await loadFixtureDocuments();
+  const totalLines = fixtureDocs.reduce((s, d) => s + d.lineCount, 0);
+  const rangesMap = new Map(
+    fixtureDocs.map((doc) => [
+      doc,
+      Array.from({ length: doc.lineCount }, (_, i) => ({ range: new vscode.Range(i, 0, i, 0) })),
+    ]),
+  );
+  const multiFileResult = await measure(
+    `gutter setDecorations (10 files, ${totalLines} lines)`,
+    async () => {
+      for (const doc of fixtureDocs) {
+        const ed = await vscode.window.showTextDocument(doc);
+        ed.setDecorations(gutter.errorGutter, rangesMap.get(doc)!);
+      }
+    },
+  );
+  results.push(multiFileResult);
 
   gutter.dispose();
   printResults(results, "gutter");

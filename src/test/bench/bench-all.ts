@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { createBetterComments } from "../../comments";
 import { ILineOptions, createDiagnosticLine } from "../../diagnostic-line";
 import { createGutterDecorators } from "../../gutter";
-import { BenchResult, measure, printResults } from "./utils";
+import { BenchResult, loadFixtureDocuments, measure, printResults } from "./utils";
 
 function makeSource(lines: number): string {
   const parts: string[] = [];
@@ -65,6 +65,44 @@ export async function runAllBench() {
     );
     results.push(result);
   }
+
+  const fixtureDocs = await loadFixtureDocuments();
+  const totalLines = fixtureDocs.reduce((s, d) => s + d.lineCount, 0);
+  const gutterRangesMap = new Map(
+    fixtureDocs.map((doc) => [
+      doc,
+      Array.from({ length: doc.lineCount }, (_, i) => ({ range: new vscode.Range(i, 0, i, 0) })),
+    ]),
+  );
+  const diagOptsMap = new Map(
+    fixtureDocs.map((doc) => [
+      doc,
+      Array.from(
+        { length: doc.lineCount },
+        (_, i): ILineOptions => ({
+          severity:
+            i % 2 === 0 ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning,
+          message: `Error #${i}`,
+          range: new vscode.Range(i, 0, i, 0),
+        }),
+      ),
+    ]),
+  );
+  const multiFileResult = await measure(
+    `all features (10 files, ${totalLines} lines)`,
+    async () => {
+      for (const doc of fixtureDocs) {
+        const ed = await vscode.window.showTextDocument(doc);
+        const { uri } = doc;
+        better.analyzeDocument(doc);
+        better.showForDocument(uri);
+        ed.setDecorations(gutter.errorGutter, gutterRangesMap.get(doc)!);
+        diagLine.updateForTextDocument(uri, diagOptsMap.get(doc)!);
+        diagLine.showLineDecoratorForDocument(uri);
+      }
+    },
+  );
+  results.push(multiFileResult);
 
   better.dispose();
   gutter.dispose();
