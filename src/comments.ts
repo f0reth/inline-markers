@@ -40,7 +40,7 @@ const BLOCK_INNER_PATTERNS: Record<CommentTagKey, RegExp> = {
 const TRAIL_RE = /(?:\s*\*+\/|\s*-->)\s*$/;
 
 type Key = CommentTagKey;
-type TagMatch = { key: Key; message: string; range: Range; tagRange: Range };
+export type TagMatch = { key: Key; message: string; range: Range; tagRange: Range };
 
 function findSingleLineComments(
   text: string,
@@ -266,6 +266,10 @@ export function createBetterComments(context: ContextLike) {
     }
   }
 
+  function getTagMatches(uri: Uri): TagMatch[] {
+    return tagLineOptions.get(uri.path) ?? [];
+  }
+
   function dispose() {
     for (const d of tagDecorators.values()) {
       d.dispose();
@@ -282,6 +286,7 @@ export function createBetterComments(context: ContextLike) {
     showForDocument,
     removeForDocument,
     updateSettingsAndRecreate,
+    getTagMatches,
     dispose,
   };
 }
