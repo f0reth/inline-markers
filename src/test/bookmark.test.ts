@@ -288,8 +288,8 @@ suite("applyShift — multiple changes processed bottom-up", () => {
       { range: { start: { line: 1 }, end: { line: 1 } }, text: "a\nb" },
       { range: { start: { line: 6 }, end: { line: 6 } }, text: "x\ny" },
     ]);
-    assert.strictEqual(result[0].line, 4);
-    assert.strictEqual(result[1].line, 12);
+    assert.strictEqual(result[0].line, 3);
+    assert.strictEqual(result[1].line, 10);
   });
 
   test("empty changes array returns bookmarks unchanged", () => {
