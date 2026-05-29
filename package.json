@@ -239,6 +239,11 @@
           "type": "boolean",
           "default": false,
           "description": "Underline decoration for HIGHLIGHT comment tags."
+        },
+        "inline-markers.comments.multilineComments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable highlighting inside block comments (/* */) and JSDoc (/** */)."
         }
       }
     }
