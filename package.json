@@ -100,6 +100,26 @@
           "default": "#FF8C00",
           "description": "Color for TODO comment tags."
         },
+        "inline-markers.comments.todo.bold": {
+          "type": "boolean",
+          "default": false,
+          "description": "Bold font for TODO comment tags."
+        },
+        "inline-markers.comments.todo.italic": {
+          "type": "boolean",
+          "default": false,
+          "description": "Italic font for TODO comment tags."
+        },
+        "inline-markers.comments.todo.strikethrough": {
+          "type": "boolean",
+          "default": false,
+          "description": "Strikethrough decoration for TODO comment tags."
+        },
+        "inline-markers.comments.todo.underline": {
+          "type": "boolean",
+          "default": false,
+          "description": "Underline decoration for TODO comment tags."
+        },
         "inline-markers.comments.fixme.enabled": {
           "type": "boolean",
           "default": true,
@@ -109,6 +129,26 @@
           "type": "string",
           "default": "#FFB6C1",
           "description": "Color for FIXME comment tags."
+        },
+        "inline-markers.comments.fixme.bold": {
+          "type": "boolean",
+          "default": false,
+          "description": "Bold font for FIXME comment tags."
+        },
+        "inline-markers.comments.fixme.italic": {
+          "type": "boolean",
+          "default": false,
+          "description": "Italic font for FIXME comment tags."
+        },
+        "inline-markers.comments.fixme.strikethrough": {
+          "type": "boolean",
+          "default": false,
+          "description": "Strikethrough decoration for FIXME comment tags."
+        },
+        "inline-markers.comments.fixme.underline": {
+          "type": "boolean",
+          "default": false,
+          "description": "Underline decoration for FIXME comment tags."
         },
         "inline-markers.comments.important.enabled": {
           "type": "boolean",
@@ -120,6 +160,26 @@
           "default": "#FF2D00",
           "description": "Color for IMPORTANT comment tags."
         },
+        "inline-markers.comments.important.bold": {
+          "type": "boolean",
+          "default": false,
+          "description": "Bold font for IMPORTANT comment tags."
+        },
+        "inline-markers.comments.important.italic": {
+          "type": "boolean",
+          "default": false,
+          "description": "Italic font for IMPORTANT comment tags."
+        },
+        "inline-markers.comments.important.strikethrough": {
+          "type": "boolean",
+          "default": false,
+          "description": "Strikethrough decoration for IMPORTANT comment tags."
+        },
+        "inline-markers.comments.important.underline": {
+          "type": "boolean",
+          "default": false,
+          "description": "Underline decoration for IMPORTANT comment tags."
+        },
         "inline-markers.comments.question.enabled": {
           "type": "boolean",
           "default": true,
@@ -130,6 +190,26 @@
           "default": "#3498DB",
           "description": "Color for QUESTION comment tags."
         },
+        "inline-markers.comments.question.bold": {
+          "type": "boolean",
+          "default": false,
+          "description": "Bold font for QUESTION comment tags."
+        },
+        "inline-markers.comments.question.italic": {
+          "type": "boolean",
+          "default": false,
+          "description": "Italic font for QUESTION comment tags."
+        },
+        "inline-markers.comments.question.strikethrough": {
+          "type": "boolean",
+          "default": false,
+          "description": "Strikethrough decoration for QUESTION comment tags."
+        },
+        "inline-markers.comments.question.underline": {
+          "type": "boolean",
+          "default": false,
+          "description": "Underline decoration for QUESTION comment tags."
+        },
         "inline-markers.comments.highlight.enabled": {
           "type": "boolean",
           "default": true,
@@ -139,6 +219,26 @@
           "type": "string",
           "default": "#98C379",
           "description": "Color for HIGHLIGHT comment tags."
+        },
+        "inline-markers.comments.highlight.bold": {
+          "type": "boolean",
+          "default": false,
+          "description": "Bold font for HIGHLIGHT comment tags."
+        },
+        "inline-markers.comments.highlight.italic": {
+          "type": "boolean",
+          "default": false,
+          "description": "Italic font for HIGHLIGHT comment tags."
+        },
+        "inline-markers.comments.highlight.strikethrough": {
+          "type": "boolean",
+          "default": false,
+          "description": "Strikethrough decoration for HIGHLIGHT comment tags."
+        },
+        "inline-markers.comments.highlight.underline": {
+          "type": "boolean",
+          "default": false,
+          "description": "Underline decoration for HIGHLIGHT comment tags."
         }
       }
     }

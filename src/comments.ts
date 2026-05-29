@@ -63,7 +63,9 @@ export function createBetterComments(context: ContextLike) {
     for (let i = 0; i < doc.lineCount; i++) {
       const { text, range } = doc.lineAt(i);
       for (const key of activeKeys) {
-        const m = configs[key].pattern.exec(text);
+        const p = configs[key].pattern;
+        if (!p) continue;
+        const m = p.exec(text);
         if (!m) continue;
 
         const tagText = m[1] ?? m[0];
@@ -114,6 +116,10 @@ export function createBetterComments(context: ContextLike) {
       pattern: PATTERNS[key],
       enabled: config.get(`${key}.enabled`, DEFAULTS[key].enabled),
       color: config.get(`${key}.color`, DEFAULTS[key].color),
+      bold: config.get(`${key}.bold`, DEFAULTS[key].bold),
+      italic: config.get(`${key}.italic`, DEFAULTS[key].italic),
+      strikethrough: config.get(`${key}.strikethrough`, DEFAULTS[key].strikethrough),
+      underline: config.get(`${key}.underline`, DEFAULTS[key].underline),
     });
     const newConfigs: Record<Key, LocalTagConfig> = {
       important: buildConfig("important"),
@@ -133,8 +139,14 @@ export function createBetterComments(context: ContextLike) {
     for (const key of TAG_KEYS) {
       const c = configs[key];
       if (!c.enabled) continue;
+      const decoLines: string[] = [];
+      if (c.strikethrough) decoLines.push("line-through");
+      if (c.underline) decoLines.push("underline");
       const deco = window.createTextEditorDecorationType({
         color: c.color,
+        fontWeight: c.bold ? "bold" : undefined,
+        fontStyle: c.italic ? "italic" : undefined,
+        textDecoration: decoLines.length > 0 ? decoLines.join(" ") : undefined,
         gutterIconPath: c.gutterIcon ? context.asAbsolutePath(c.gutterIcon) : undefined,
         gutterIconSize: "contain",
       });
