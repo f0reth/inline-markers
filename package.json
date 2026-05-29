@@ -82,6 +82,7 @@
       {
         "command": "inline-markers.bookmark.deleteItem",
         "title": "Delete Bookmark",
+        "icon": "$(close)",
         "category": "Inline Markers"
       },
       {
