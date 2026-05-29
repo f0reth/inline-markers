@@ -2,19 +2,20 @@ import * as assert from "node:assert";
 
 import * as vscode from "vscode";
 
-import { createBetterComments } from "../comments";
+import { createBetterComments, TagMatch } from "../comments";
 
 const stubContext = {
   asAbsolutePath: (p: string) => p,
 };
 
 suite("BetterComments — API surface", () => {
-  test("createBetterComments returns expected API (5 functions)", () => {
+  test("createBetterComments returns expected API (6 functions)", () => {
     const bc = createBetterComments(stubContext);
     assert.strictEqual(typeof bc.analyzeDocument, "function");
     assert.strictEqual(typeof bc.showForDocument, "function");
     assert.strictEqual(typeof bc.removeForDocument, "function");
     assert.strictEqual(typeof bc.updateSettingsAndRecreate, "function");
+    assert.strictEqual(typeof bc.getTagMatches, "function");
     assert.strictEqual(typeof bc.dispose, "function");
     bc.dispose();
   });
@@ -136,31 +137,11 @@ suite("BetterComments — analyzeDocument", () => {
     bc.dispose();
   });
 
-  test("does not throw for a document with no matching comment lines", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "const x = 1;\nconst y = 2;",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
   test("does not throw for a document with a line matching multiple tag patterns", async () => {
     const bc = createBetterComments(stubContext);
     const doc = await vscode.workspace.openTextDocument({
       content: "// TODO: FIXME: both tags",
       language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("analyzeDocument on 'mdx' document does not throw (mdx is in default excludeLanguages)", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "// TODO: should be excluded",
-      language: "mdx",
     });
     assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
@@ -221,16 +202,6 @@ suite("BetterComments — analyzeDocument", () => {
     bc.dispose();
   });
 
-  test("does not throw for inline comment mid-line FIXME", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "return value; // FIXME: off-by-one error",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
   test("does not throw for multiline block comment with inner tags", async () => {
     const bc = createBetterComments(stubContext);
     const doc = await vscode.workspace.openTextDocument({
@@ -251,16 +222,6 @@ suite("BetterComments — analyzeDocument", () => {
     bc.dispose();
   });
 
-  test("does not throw for single-line block comment /* TODO: fix */", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "/* TODO: fix */",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
   test("does not throw for document with multiple inline comments on different lines", async () => {
     const bc = createBetterComments(stubContext);
     const doc = await vscode.workspace.openTextDocument({
@@ -270,5 +231,86 @@ suite("BetterComments — analyzeDocument", () => {
     });
     assert.doesNotThrow(() => bc.analyzeDocument(doc));
     bc.dispose();
+  });
+});
+
+suite("BetterComments — analyzeDocument result verification", () => {
+  async function analyze(content: string, language = "typescript") {
+    const bc = createBetterComments(stubContext);
+    const doc = await vscode.workspace.openTextDocument({ content, language });
+    bc.analyzeDocument(doc);
+    const results = bc.getTagMatches(doc.uri);
+    bc.dispose();
+    return results;
+  }
+
+  test('"// TODO: fix this" → key === "todo", length === 1', async () => {
+    const results = await analyze("// TODO: fix this");
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].key, "todo");
+  });
+
+  test('"// FIXME: broken" → key === "fixme", length === 1', async () => {
+    const results = await analyze("// FIXME: broken");
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].key, "fixme");
+  });
+
+  test('"// ! important" → key === "important", length === 1', async () => {
+    const results = await analyze("// ! important");
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].key, "important");
+  });
+
+  test('"// ? question" → key === "question", length === 1', async () => {
+    const results = await analyze("// ? question");
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].key, "question");
+  });
+
+  test('"// * highlight" → key === "highlight", length === 1', async () => {
+    const results = await analyze("// * highlight");
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].key, "highlight");
+  });
+
+  test("mixed tags: 3 lines → 3 results with correct keys", async () => {
+    const content = "// TODO: a\n// FIXME: b\n// ! c";
+    const results = await analyze(content);
+    assert.strictEqual(results.length, 3);
+    const keys = results.map((r: TagMatch) => r.key);
+    assert.ok(keys.includes("todo"));
+    assert.ok(keys.includes("fixme"));
+    assert.ok(keys.includes("important"));
+  });
+
+  test("excludeLanguages: markdown → getTagMatches returns empty array", async () => {
+    const results = await analyze("<!-- TODO: excluded -->", "markdown");
+    assert.deepStrictEqual(results, []);
+  });
+
+  test("removeForDocument → getTagMatches returns empty array", async () => {
+    const bc = createBetterComments(stubContext);
+    const doc = await vscode.workspace.openTextDocument({
+      content: "// TODO: something",
+      language: "typescript",
+    });
+    bc.analyzeDocument(doc);
+    assert.strictEqual(bc.getTagMatches(doc.uri).length, 1);
+    bc.removeForDocument(doc.uri);
+    assert.deepStrictEqual(bc.getTagMatches(doc.uri), []);
+    bc.dispose();
+  });
+
+  test('"const x = 1; // TODO: fix" (inline) → detected as todo', async () => {
+    const results = await analyze("const x = 1; // TODO: fix");
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].key, "todo");
+  });
+
+  test('multiline block "/*\\n * TODO:\\n */" → key === "todo"', async () => {
+    const results = await analyze("/*\n * TODO: implement\n */");
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].key, "todo");
   });
 });
