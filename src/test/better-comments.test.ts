@@ -210,4 +210,65 @@ suite("BetterComments — analyzeDocument", () => {
     });
     bc.dispose();
   });
+
+  test("does not throw for inline comment (const x = 1; // TODO: fix)", async () => {
+    const bc = createBetterComments(stubContext);
+    const doc = await vscode.workspace.openTextDocument({
+      content: "const x = 1; // TODO: fix",
+      language: "typescript",
+    });
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
+    bc.dispose();
+  });
+
+  test("does not throw for inline comment mid-line FIXME", async () => {
+    const bc = createBetterComments(stubContext);
+    const doc = await vscode.workspace.openTextDocument({
+      content: "return value; // FIXME: off-by-one error",
+      language: "typescript",
+    });
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
+    bc.dispose();
+  });
+
+  test("does not throw for multiline block comment with inner tags", async () => {
+    const bc = createBetterComments(stubContext);
+    const doc = await vscode.workspace.openTextDocument({
+      content: "/*\n * TODO: implement\n * FIXME: broken\n */",
+      language: "typescript",
+    });
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
+    bc.dispose();
+  });
+
+  test("does not throw for JSDoc comment with inner tag", async () => {
+    const bc = createBetterComments(stubContext);
+    const doc = await vscode.workspace.openTextDocument({
+      content: "/**\n * TODO: document this\n */",
+      language: "typescript",
+    });
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
+    bc.dispose();
+  });
+
+  test("does not throw for single-line block comment /* TODO: fix */", async () => {
+    const bc = createBetterComments(stubContext);
+    const doc = await vscode.workspace.openTextDocument({
+      content: "/* TODO: fix */",
+      language: "typescript",
+    });
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
+    bc.dispose();
+  });
+
+  test("does not throw for document with multiple inline comments on different lines", async () => {
+    const bc = createBetterComments(stubContext);
+    const doc = await vscode.workspace.openTextDocument({
+      content:
+        "const a = 1; // TODO: fix a\nconst b = 2; // FIXME: fix b\nconst c = 3; // ! important",
+      language: "typescript",
+    });
+    assert.doesNotThrow(() => bc.analyzeDocument(doc));
+    bc.dispose();
+  });
 });

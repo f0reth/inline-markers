@@ -56,4 +56,40 @@ suite("Configurations", () => {
       assert.ok(key in DEFAULTS, `"${key}" should be in DEFAULTS`);
     }
   });
+
+  test("all tags default bold to false", () => {
+    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
+    for (const key of keys) {
+      assert.strictEqual(DEFAULTS[key].bold, false, `${key}.bold should default to false`);
+    }
+  });
+
+  test("all tags default italic to false", () => {
+    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
+    for (const key of keys) {
+      assert.strictEqual(DEFAULTS[key].italic, false, `${key}.italic should default to false`);
+    }
+  });
+
+  test("all tags default strikethrough to false", () => {
+    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
+    for (const key of keys) {
+      assert.strictEqual(
+        DEFAULTS[key].strikethrough,
+        false,
+        `${key}.strikethrough should default to false`,
+      );
+    }
+  });
+
+  test("all tags default underline to false", () => {
+    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
+    for (const key of keys) {
+      assert.strictEqual(
+        DEFAULTS[key].underline,
+        false,
+        `${key}.underline should default to false`,
+      );
+    }
+  });
 });

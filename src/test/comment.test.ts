@@ -3,13 +3,22 @@ import * as assert from "node:assert";
 // Mirrors TRAIL_RE from comments.ts for isolated testing
 const TRAIL_RE = /(?:\s*\*+\/|\s*-->)\s*$/;
 
-// Mirrors PATTERNS from comments.ts (not exported) for isolated regex testing
-const COMMENT_PATTERNS = {
-  todo: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*((?:TODO|FIXME)\b[:-]?)\s*(.*)/i,
-  fixme: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(FIXME\b[:-]?)\s*(.*)/i,
-  important: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(!)(?=\s|$)\s*(.*)/,
-  question: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\?)(?=\s|$)\s*(.*)/,
-  highlight: /^\s*(?:\/\/|#|--|(?:\*(?!\/))|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)(?=\s|$)\s*(.*)/,
+// Mirrors SINGLE_LINE_PATTERNS from comments.ts (no ^ anchor — matches inline comments)
+const SINGLE_LINE_PATTERNS = {
+  todo: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*((?:TODO|FIXME)\b[:-]?)\s*(.*)/i,
+  fixme: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(FIXME\b[:-]?)\s*(.*)/i,
+  important: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(!)(?=\s|$)\s*(.*)/,
+  question: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(\?)(?=\s|$)\s*(.*)/,
+  highlight: /(?:\/\/|#|--|<!--|\/\*+)(?:[\s*!?]*)\s*(\*)(?=\s|$)\s*(.*)/,
+};
+
+// Mirrors BLOCK_INNER_PATTERNS from comments.ts (applied inside multiline /* */ and /** */ blocks)
+const BLOCK_INNER_PATTERNS = {
+  todo: /^[ \t]*\*?[ \t]*((?:TODO|FIXME)\b[:-]?)\s*(.*)/im,
+  fixme: /^[ \t]*\*?[ \t]*(FIXME\b[:-]?)\s*(.*)/im,
+  important: /^[ \t]*\*?[ \t]*(!)(?=\s|$)\s*(.*)/m,
+  question: /^[ \t]*\*?[ \t]*(\?)(?=\s|$)\s*(.*)/m,
+  highlight: /^[ \t]*\*?[ \t]*(\*)(?=\s|$)\s*(.*)/m,
 };
 
 suite("TRAIL_RE — trailing block comment closer stripping", () => {
@@ -30,9 +39,9 @@ suite("TRAIL_RE — trailing block comment closer stripping", () => {
   });
 });
 
-suite("Comment Patterns", () => {
+suite("SINGLE_LINE_PATTERNS", () => {
   suite("todo", () => {
-    const pat = COMMENT_PATTERNS.todo;
+    const pat = SINGLE_LINE_PATTERNS.todo;
 
     test("matches // TODO:", () => {
       const m = pat.exec("// TODO: fix this");
@@ -104,17 +113,20 @@ suite("Comment Patterns", () => {
       assert.strictEqual(m[2], "");
     });
 
-    test("matches block comment middle line * TODO:", () => {
-      assert.ok(pat.exec("   * TODO: in block"), "block comment middle line should match");
-    });
-
     test("does not match URL-like line without comment prefix", () => {
       assert.strictEqual(pat.exec("https://example.com"), null);
+    });
+
+    test("matches inline comment: const x = 1; // TODO: fix", () => {
+      const m = pat.exec("const x = 1; // TODO: fix");
+      assert.ok(m, "inline comment should match");
+      assert.ok(m[1].toUpperCase().startsWith("TODO"));
+      assert.strictEqual(m[2].trim(), "fix");
     });
   });
 
   suite("fixme", () => {
-    const pat = COMMENT_PATTERNS.fixme;
+    const pat = SINGLE_LINE_PATTERNS.fixme;
 
     test("matches // FIXME:", () => {
       const m = pat.exec("// FIXME: this is broken");
@@ -155,10 +167,15 @@ suite("Comment Patterns", () => {
     test("matches -- FIXME: (SQL comment)", () => {
       assert.ok(pat.exec("-- FIXME: sql"), "SQL comment should match");
     });
+
+    test("matches inline comment: return x; // FIXME: off-by-one", () => {
+      const m = pat.exec("return x; // FIXME: off-by-one");
+      assert.ok(m, "inline FIXME should match");
+    });
   });
 
   suite("important (!)", () => {
-    const pat = COMMENT_PATTERNS.important;
+    const pat = SINGLE_LINE_PATTERNS.important;
 
     test("matches // ! with message", () => {
       const m = pat.exec("// ! critical section");
@@ -219,7 +236,7 @@ suite("Comment Patterns", () => {
   });
 
   suite("question (?)", () => {
-    const pat = COMMENT_PATTERNS.question;
+    const pat = SINGLE_LINE_PATTERNS.question;
 
     test("matches // ? with message", () => {
       const m = pat.exec("// ? is this right?");
@@ -262,15 +279,15 @@ suite("Comment Patterns", () => {
   });
 
   suite("todo — ! prefix absorption", () => {
-    test("todo pattern matches '// ! TODO: msg' (! prefix absorbed by [\\s*!?]*)", () => {
-      const m = COMMENT_PATTERNS.todo.exec("// ! TODO: priority check");
+    test("todo pattern matches '// ! TODO: msg' ([\\s*!?]* absorbs ! prefix)", () => {
+      const m = SINGLE_LINE_PATTERNS.todo.exec("// ! TODO: priority check");
       assert.ok(m, "should match");
       assert.ok(m[1].toUpperCase().startsWith("TODO"));
     });
   });
 
   suite("highlight (*)", () => {
-    const pat = COMMENT_PATTERNS.highlight;
+    const pat = SINGLE_LINE_PATTERNS.highlight;
 
     test("matches // * with message", () => {
       const m = pat.exec("// * important highlight");
@@ -329,6 +346,73 @@ suite("Comment Patterns", () => {
 
     test("does not match '**/eslint.config.mjs'", () => {
       assert.strictEqual(pat.exec("**/eslint.config.mjs"), null);
+    });
+  });
+});
+
+suite("BLOCK_INNER_PATTERNS", () => {
+  suite("todo", () => {
+    const pat = BLOCK_INNER_PATTERNS.todo;
+
+    test("matches block comment middle line * TODO:", () => {
+      const m = pat.exec("   * TODO: in block");
+      assert.ok(m, "should match");
+      assert.ok(m[1].toUpperCase().startsWith("TODO"));
+      assert.strictEqual(m[2].trim(), "in block");
+    });
+
+    test("matches line with leading whitespace only", () => {
+      assert.ok(pat.exec("   TODO: no star prefix"), "whitespace-only prefix should match");
+    });
+
+    test("matches FIXME via todo pattern", () => {
+      assert.ok(pat.exec(" * FIXME: captured by todo pattern"), "FIXME should match todo");
+    });
+
+    test("is case insensitive", () => {
+      assert.ok(pat.exec(" * todo: lowercase"), "lowercase should match");
+    });
+  });
+
+  suite("fixme", () => {
+    const pat = BLOCK_INNER_PATTERNS.fixme;
+
+    test("matches * FIXME: line", () => {
+      const m = pat.exec(" * FIXME: broken here");
+      assert.ok(m, "should match");
+      assert.ok(m[1].toUpperCase().startsWith("FIXME"));
+    });
+
+    test("does not match TODO-only line", () => {
+      assert.strictEqual(pat.exec(" * TODO: not fixme"), null);
+    });
+  });
+
+  suite("important (!)", () => {
+    const pat = BLOCK_INNER_PATTERNS.important;
+
+    test("matches * ! line", () => {
+      const m = pat.exec(" * ! critical");
+      assert.ok(m, "should match");
+      assert.strictEqual(m[1], "!");
+    });
+
+    test("does not match * !word (no space after !)", () => {
+      assert.strictEqual(pat.exec(" * !word"), null);
+    });
+  });
+
+  suite("highlight (*)", () => {
+    const pat = BLOCK_INNER_PATTERNS.highlight;
+
+    test("matches * * highlight line (star prefix + star tag)", () => {
+      const m = pat.exec(" * * highlighted note");
+      assert.ok(m, "should match — first * is prefix, second * is tag");
+      assert.strictEqual(m[1], "*");
+    });
+
+    test("matches line with just star tag", () => {
+      assert.ok(pat.exec("   * note"), "should match");
     });
   });
 });
