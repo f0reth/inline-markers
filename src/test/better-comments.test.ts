@@ -90,150 +90,6 @@ suite("BetterComments — showForDocument", () => {
   });
 });
 
-suite("BetterComments — analyzeDocument", () => {
-  test("does not throw for a basic TypeScript document", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "const x = 1;",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for a markdown document (languageId in excludeLanguages)", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "<!-- TODO: excluded -->",
-      language: "markdown",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("analyzeDocument does not throw for all 5 comment tag types", async () => {
-    const bc = createBetterComments(stubContext);
-    const cases = [
-      { content: "// TODO: fix this", label: "todo" },
-      { content: "// FIXME: broken", label: "fixme" },
-      { content: "// ! important note", label: "important" },
-      { content: "// ? what is this", label: "question" },
-      { content: "// * highlighted", label: "highlight" },
-    ];
-    for (const { content, label } of cases) {
-      const doc = await vscode.workspace.openTextDocument({ content, language: "typescript" });
-      assert.doesNotThrow(() => bc.analyzeDocument(doc), `should not throw for ${label}`);
-    }
-    bc.dispose();
-  });
-
-  test("does not throw for an empty document", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for a document with a line matching multiple tag patterns", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "// TODO: FIXME: both tags",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  // TRAIL_RE strips trailing */ and --> before storing tag text; covered by the two tests below
-  test("does not throw for a block comment line ending with */", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "/* TODO: fix */",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for an HTML comment line ending with -->", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "<!-- TODO: fix -->",
-      language: "html",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for a comment where tag text has no trailing message", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "// TODO:",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw repeated calls on the same URI (idempotent)", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "// TODO: repeat",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => {
-      bc.analyzeDocument(doc);
-      bc.analyzeDocument(doc);
-      bc.analyzeDocument(doc);
-    });
-    bc.dispose();
-  });
-
-  test("does not throw for inline comment (const x = 1; // TODO: fix)", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "const x = 1; // TODO: fix",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for multiline block comment with inner tags", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "/*\n * TODO: implement\n * FIXME: broken\n */",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for JSDoc comment with inner tag", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content: "/**\n * TODO: document this\n */",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-
-  test("does not throw for document with multiple inline comments on different lines", async () => {
-    const bc = createBetterComments(stubContext);
-    const doc = await vscode.workspace.openTextDocument({
-      content:
-        "const a = 1; // TODO: fix a\nconst b = 2; // FIXME: fix b\nconst c = 3; // ! important",
-      language: "typescript",
-    });
-    assert.doesNotThrow(() => bc.analyzeDocument(doc));
-    bc.dispose();
-  });
-});
-
 suite("BetterComments — analyzeDocument result verification", () => {
   async function analyze(content: string, language = "typescript") {
     const bc = createBetterComments(stubContext);
@@ -314,5 +170,55 @@ suite("BetterComments — analyzeDocument result verification", () => {
       results.some((r: TagMatch) => r.key === "todo"),
       "should detect todo in block comment",
     );
+  });
+
+  test('"// skip\\n// TODO: on line 1" → range.start.line === 1', async () => {
+    const results = await analyze("// skip\n// TODO: on line 1");
+    const todo = results.find((r: TagMatch) => r.key === "todo");
+    assert.ok(todo, "should find todo");
+    assert.strictEqual(todo.range.start.line, 1);
+  });
+
+  test('"/* TODO: fix */" → message === "fix" (trailing */ stripped)', async () => {
+    const results = await analyze("/* TODO: fix */");
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].message, "fix");
+  });
+
+  test("empty document → getTagMatches returns empty array", async () => {
+    const results = await analyze("");
+    assert.deepStrictEqual(results, []);
+  });
+
+  test("repeated analyzeDocument calls → result reflects last state (not accumulated)", async () => {
+    const bc = createBetterComments(stubContext);
+    const doc = await vscode.workspace.openTextDocument({
+      content: "// TODO: repeat",
+      language: "typescript",
+    });
+    bc.analyzeDocument(doc);
+    bc.analyzeDocument(doc);
+    bc.analyzeDocument(doc);
+    assert.strictEqual(bc.getTagMatches(doc.uri).length, 1);
+    bc.dispose();
+  });
+
+  test('JSDoc "/**\\n * TODO: doc\\n */" → todo detected', async () => {
+    const results = await analyze("/**\n * TODO: document this\n */");
+    assert.ok(
+      results.some((r: TagMatch) => r.key === "todo"),
+      "should detect todo in JSDoc comment",
+    );
+  });
+
+  test("multiple inline comments on different lines → all tags detected", async () => {
+    const content =
+      "const a = 1; // TODO: fix a\nconst b = 2; // FIXME: fix b\nconst c = 3; // ! important";
+    const results = await analyze(content);
+    assert.strictEqual(results.length, 3);
+    const keys = results.map((r: TagMatch) => r.key);
+    assert.ok(keys.includes("todo"));
+    assert.ok(keys.includes("fixme"));
+    assert.ok(keys.includes("important"));
   });
 });
