@@ -3,12 +3,13 @@ import * as assert from "node:assert";
 import * as vscode from "vscode";
 
 import {
-  BookmarkItemTreeItem,
-  CommentItemTreeItem,
   MarkerFileTreeItem,
-  PlaceholderTreeItem,
-  SectionTreeItem,
+  createBookmarkItemTreeItem,
+  createCommentItemTreeItem,
+  createMarkerFileTreeItem,
   createMarkersTreeProvider,
+  createPlaceholderTreeItem,
+  createSectionTreeItem,
 } from "../markers-tree";
 import { Bookmark } from "../types";
 
@@ -25,51 +26,55 @@ function waitForRefresh(provider: Provider): Promise<void> {
 
 suite("markers-tree — tree item classes", () => {
   test("SectionTreeItem: sectionId and Expanded state", () => {
-    const item = new SectionTreeItem("Bookmarks", "bookmarks");
+    const item = createSectionTreeItem("Bookmarks", "bookmarks");
+    assert.strictEqual(item.kind, "section");
     assert.strictEqual(item.sectionId, "bookmarks");
     assert.strictEqual(item.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
   });
 
   test("PlaceholderTreeItem: None collapsible state", () => {
-    const item = new PlaceholderTreeItem("No bookmarks");
+    const item = createPlaceholderTreeItem("No bookmarks");
+    assert.strictEqual(item.kind, "placeholder");
     assert.strictEqual(item.collapsibleState, vscode.TreeItemCollapsibleState.None);
   });
 
   test("MarkerFileTreeItem(bookmarks): contextValue is bookmarkFile", () => {
-    const item = new MarkerFileTreeItem("file:///test.ts", "test.ts", "bookmarks");
+    const item = createMarkerFileTreeItem("file:///test.ts", "test.ts", "bookmarks");
+    assert.strictEqual(item.kind, "markerFile");
     assert.strictEqual(item.contextValue, "bookmarkFile");
   });
 
   test("MarkerFileTreeItem(comments): contextValue is commentFile", () => {
-    const item = new MarkerFileTreeItem("file:///test.ts", "test.ts", "comments");
+    const item = createMarkerFileTreeItem("file:///test.ts", "test.ts", "comments");
     assert.strictEqual(item.contextValue, "commentFile");
   });
 
   test("MarkerFileTreeItem: iconPath is ThemeIcon.File", () => {
-    const item = new MarkerFileTreeItem("file:///test.ts", "test.ts", "bookmarks");
+    const item = createMarkerFileTreeItem("file:///test.ts", "test.ts", "bookmarks");
     assert.strictEqual(item.iconPath, vscode.ThemeIcon.File);
   });
 
   test("MarkerFileTreeItem: command opens the file", () => {
-    const item = new MarkerFileTreeItem("file:///test.ts", "test.ts", "bookmarks");
+    const item = createMarkerFileTreeItem("file:///test.ts", "test.ts", "bookmarks");
     assert.strictEqual(item.command?.command, "vscode.open");
   });
 
   test("BookmarkItemTreeItem: bookmark property preserved", () => {
     const bm: Bookmark = { uri: "file:///test.ts", line: 5 };
-    const item = new BookmarkItemTreeItem(bm, "L6: test");
+    const item = createBookmarkItemTreeItem(bm, "L6: test");
+    assert.strictEqual(item.kind, "bookmarkItem");
     assert.deepStrictEqual(item.bookmark, bm);
   });
 
   test("BookmarkItemTreeItem: contextValue is bookmarkItem", () => {
     const bm: Bookmark = { uri: "file:///test.ts", line: 5 };
-    const item = new BookmarkItemTreeItem(bm, "L6: test");
+    const item = createBookmarkItemTreeItem(bm, "L6: test");
     assert.strictEqual(item.contextValue, "bookmarkItem");
   });
 
   test("BookmarkItemTreeItem: command is inline-markers.bookmark._jump", () => {
     const bm: Bookmark = { uri: "file:///test.ts", line: 5 };
-    const item = new BookmarkItemTreeItem(bm, "L6: test");
+    const item = createBookmarkItemTreeItem(bm, "L6: test");
     assert.strictEqual(item.command?.command, "inline-markers.bookmark._jump");
   });
 
@@ -80,7 +85,8 @@ suite("markers-tree — tree item classes", () => {
       range: new vscode.Range(0, 0, 0, 10),
       tagRange: new vscode.Range(0, 0, 0, 5),
     };
-    const item = new CommentItemTreeItem(match, "file:///test.ts", "L1: broken");
+    const item = createCommentItemTreeItem(match, "file:///test.ts", "L1: broken");
+    assert.strictEqual(item.kind, "commentItem");
     assert.ok(
       item.iconPath instanceof vscode.ThemeIcon && item.iconPath.id === "warning",
       "fixme icon should be 'warning'",
@@ -94,7 +100,7 @@ suite("markers-tree — tree item classes", () => {
       range: new vscode.Range(2, 0, 2, 15),
       tagRange: new vscode.Range(2, 0, 2, 4),
     };
-    const item = new CommentItemTreeItem(match, "file:///test.ts", "L3: implement");
+    const item = createCommentItemTreeItem(match, "file:///test.ts", "L3: implement");
     assert.ok(
       item.iconPath instanceof vscode.ThemeIcon && item.iconPath.id === "check-circle",
       "todo icon should be 'check-circle'",
@@ -108,7 +114,7 @@ suite("markers-tree — tree item classes", () => {
       range: new vscode.Range(3, 0, 3, 10),
       tagRange: new vscode.Range(3, 0, 3, 4),
     };
-    const item = new CommentItemTreeItem(match, "file:///test.ts", "L4: test");
+    const item = createCommentItemTreeItem(match, "file:///test.ts", "L4: test");
     const args = item.command?.arguments;
     assert.ok(
       Array.isArray(args) && args.length >= 2,
@@ -125,18 +131,18 @@ suite("markers-tree — MarkersTreeProvider.getChildren()", () => {
     const provider = createMarkersTreeProvider(() => []);
     const children = provider.getChildren();
     assert.strictEqual(children.length, 2);
-    assert.ok(children[0] instanceof SectionTreeItem);
+    assert.ok(children[0].kind === "section");
     assert.strictEqual(children[0].sectionId, "bookmarks");
-    assert.ok(children[1] instanceof SectionTreeItem);
+    assert.ok(children[1].kind === "section");
     assert.strictEqual(children[1].sectionId, "comments");
   });
 
   test("SectionTreeItem(bookmarks) with no bookmarks → PlaceholderTreeItem('No bookmarks')", () => {
     const provider = createMarkersTreeProvider(() => []);
-    const section = new SectionTreeItem("Bookmarks", "bookmarks");
+    const section = createSectionTreeItem("Bookmarks", "bookmarks");
     const children = provider.getChildren(section);
     assert.strictEqual(children.length, 1);
-    assert.ok(children[0] instanceof PlaceholderTreeItem);
+    assert.ok(children[0].kind === "placeholder");
     assert.strictEqual(children[0].label, "No bookmarks");
   });
 
@@ -147,20 +153,20 @@ suite("markers-tree — MarkersTreeProvider.getChildren()", () => {
       { uri: "file:///b.ts", line: 5 },
     ];
     const provider = createMarkersTreeProvider(() => bms);
-    const section = new SectionTreeItem("Bookmarks", "bookmarks");
+    const section = createSectionTreeItem("Bookmarks", "bookmarks");
     const children = provider.getChildren(section);
     assert.strictEqual(children.length, 2);
-    assert.ok(children[0] instanceof MarkerFileTreeItem);
-    assert.ok(children[1] instanceof MarkerFileTreeItem);
+    assert.ok(children[0].kind === "markerFile");
+    assert.ok(children[1].kind === "markerFile");
     assert.ok(children[0].bookmarkUri < children[1].bookmarkUri, "items should be sorted by URI");
   });
 
   test("SectionTreeItem(comments) with no comments → PlaceholderTreeItem('No TODO/FIXME found')", () => {
     const provider = createMarkersTreeProvider(() => []);
-    const section = new SectionTreeItem("TODO / FIXME", "comments");
+    const section = createSectionTreeItem("TODO / FIXME", "comments");
     const children = provider.getChildren(section);
     assert.strictEqual(children.length, 1);
-    assert.ok(children[0] instanceof PlaceholderTreeItem);
+    assert.ok(children[0].kind === "placeholder");
     assert.strictEqual(children[0].label, "No TODO/FIXME found");
   });
 
@@ -172,12 +178,12 @@ suite("markers-tree — MarkersTreeProvider.getChildren()", () => {
       { uri, line: 7 },
     ];
     const provider = createMarkersTreeProvider(() => bms);
-    const fileItem = new MarkerFileTreeItem(uri, "test.ts", "bookmarks");
+    const fileItem = createMarkerFileTreeItem(uri, "test.ts", "bookmarks");
     const children = provider.getChildren(fileItem);
     assert.strictEqual(children.length, 3);
-    assert.ok(children[0] instanceof BookmarkItemTreeItem);
-    assert.ok(children[1] instanceof BookmarkItemTreeItem);
-    assert.ok(children[2] instanceof BookmarkItemTreeItem);
+    assert.ok(children[0].kind === "bookmarkItem");
+    assert.ok(children[1].kind === "bookmarkItem");
+    assert.ok(children[2].kind === "bookmarkItem");
     assert.strictEqual(children[0].bookmark.line, 2);
     assert.strictEqual(children[1].bookmark.line, 7);
     assert.strictEqual(children[2].bookmark.line, 10);
@@ -204,14 +210,14 @@ suite("markers-tree — MarkersTreeProvider.getChildren()", () => {
     const [, commentsSection] = provider.getChildren();
     const fileItems = provider.getChildren(commentsSection);
     const [fileItem] = fileItems.filter(
-      (fi): fi is MarkerFileTreeItem => fi instanceof MarkerFileTreeItem && fi.bookmarkUri === uri,
+      (fi): fi is MarkerFileTreeItem => fi.kind === "markerFile" && fi.bookmarkUri === uri,
     );
     assert.ok(fileItem, "should have a file item for the test document");
 
     const commentItems = provider.getChildren(fileItem);
     assert.ok(commentItems.length >= 2, "should have at least 2 comment items");
-    assert.ok(commentItems[0] instanceof CommentItemTreeItem);
-    assert.ok(commentItems[1] instanceof CommentItemTreeItem);
+    assert.ok(commentItems[0].kind === "commentItem");
+    assert.ok(commentItems[1].kind === "commentItem");
     assert.ok(
       typeof commentItems[0].label === "string" && commentItems[0].label.startsWith("L1:"),
       "first item should be L1 (FIXME at line 0)",
@@ -225,8 +231,8 @@ suite("markers-tree — MarkersTreeProvider.getChildren()", () => {
   test("other element types (placeholder, bookmark item) → empty array", () => {
     const provider = createMarkersTreeProvider(() => []);
     const bm: Bookmark = { uri: "file:///test.ts", line: 0 };
-    const placeholder = new PlaceholderTreeItem("test");
-    const bookmarkItem = new BookmarkItemTreeItem(bm, "L1: test");
+    const placeholder = createPlaceholderTreeItem("test");
+    const bookmarkItem = createBookmarkItemTreeItem(bm, "L1: test");
     assert.deepStrictEqual(provider.getChildren(placeholder), []);
     assert.deepStrictEqual(provider.getChildren(bookmarkItem), []);
   });
@@ -237,10 +243,10 @@ suite("markers-tree — label format", () => {
     const uri = "file:///test.ts";
     const bms: Bookmark[] = [{ uri, line: 4 }];
     const provider = createMarkersTreeProvider(() => bms);
-    const fileItem = new MarkerFileTreeItem(uri, "test.ts", "bookmarks");
+    const fileItem = createMarkerFileTreeItem(uri, "test.ts", "bookmarks");
     const children = provider.getChildren(fileItem);
     assert.strictEqual(children.length, 1);
-    assert.ok(children[0] instanceof BookmarkItemTreeItem);
+    assert.ok(children[0].kind === "bookmarkItem");
     assert.strictEqual(children[0].label, "L5: (unavailable)");
   });
 });

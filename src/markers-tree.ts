@@ -5,7 +5,6 @@ import {
   Range,
   ThemeColor,
   ThemeIcon,
-  TreeDataProvider,
   TreeItem,
   TreeItemCollapsibleState,
   Uri,
@@ -15,146 +14,192 @@ import {
 import { parseDocument, TagMatch } from "./comments";
 import { Bookmark } from "./types";
 
-export class SectionTreeItem extends TreeItem {
+export type SectionTreeItem = TreeItem & {
+  readonly kind: "section";
   readonly sectionId: "bookmarks" | "comments";
-
-  constructor(label: string, sectionId: "bookmarks" | "comments") {
-    super(label, TreeItemCollapsibleState.Expanded);
-    this.sectionId = sectionId;
-  }
+};
+export function createSectionTreeItem(
+  label: string,
+  sectionId: "bookmarks" | "comments",
+): SectionTreeItem {
+  return Object.assign(new TreeItem(label, TreeItemCollapsibleState.Expanded), {
+    kind: "section" as const,
+    sectionId,
+  });
 }
 
-export class PlaceholderTreeItem extends TreeItem {
-  constructor(label: string) {
-    super(label, TreeItemCollapsibleState.None);
-  }
+export type PlaceholderTreeItem = TreeItem & {
+  readonly kind: "placeholder";
+};
+export function createPlaceholderTreeItem(label: string): PlaceholderTreeItem {
+  return Object.assign(new TreeItem(label, TreeItemCollapsibleState.None), {
+    kind: "placeholder" as const,
+  });
 }
 
-export class MarkerFileTreeItem extends TreeItem {
+export type MarkerFileTreeItem = TreeItem & {
+  readonly kind: "markerFile";
   readonly bookmarkUri: string;
   readonly sectionId: "bookmarks" | "comments";
-
-  constructor(uri: string, label: string, sectionId: "bookmarks" | "comments") {
-    super(label, TreeItemCollapsibleState.Expanded);
-    this.bookmarkUri = uri;
-    this.sectionId = sectionId;
-    this.contextValue = sectionId === "bookmarks" ? "bookmarkFile" : "commentFile";
-    this.resourceUri = Uri.parse(uri);
-    this.iconPath = ThemeIcon.File;
-    this.command = {
-      command: "vscode.open",
-      title: "Open File",
-      arguments: [Uri.parse(uri)],
-    };
-  }
+};
+export function createMarkerFileTreeItem(
+  uri: string,
+  label: string,
+  sectionId: "bookmarks" | "comments",
+): MarkerFileTreeItem {
+  const item = Object.assign(new TreeItem(label, TreeItemCollapsibleState.Expanded), {
+    kind: "markerFile" as const,
+    bookmarkUri: uri,
+    sectionId,
+  });
+  item.contextValue = sectionId === "bookmarks" ? "bookmarkFile" : "commentFile";
+  item.resourceUri = Uri.parse(uri);
+  item.iconPath = ThemeIcon.File;
+  item.command = {
+    command: "vscode.open",
+    title: "Open File",
+    arguments: [Uri.parse(uri)],
+  };
+  return item;
 }
 
 export { MarkerFileTreeItem as BookmarkFileTreeItem };
 
-export class BookmarkItemTreeItem extends TreeItem {
+export type BookmarkItemTreeItem = TreeItem & {
+  readonly kind: "bookmarkItem";
   readonly bookmark: Bookmark;
-
-  constructor(bookmark: Bookmark, label: string) {
-    super(label, TreeItemCollapsibleState.None);
-    this.bookmark = bookmark;
-    this.contextValue = "bookmarkItem";
-    this.iconPath = new ThemeIcon("bookmark");
-    this.command = {
-      command: "inline-markers.bookmark._jump",
-      title: "Jump",
-      arguments: [bookmark],
-    };
-  }
+};
+export function createBookmarkItemTreeItem(
+  bookmark: Bookmark,
+  label: string,
+): BookmarkItemTreeItem {
+  const item = Object.assign(new TreeItem(label, TreeItemCollapsibleState.None), {
+    kind: "bookmarkItem" as const,
+    bookmark,
+  });
+  item.contextValue = "bookmarkItem";
+  item.iconPath = new ThemeIcon("bookmark");
+  item.command = {
+    command: "inline-markers.bookmark._jump",
+    title: "Jump",
+    arguments: [bookmark],
+  };
+  return item;
 }
 
-export class CommentItemTreeItem extends TreeItem {
-  constructor(match: TagMatch, uri: string, label: string) {
-    super(label, TreeItemCollapsibleState.None);
-    this.contextValue = "commentItem";
-    if (match.key === "fixme") {
-      this.iconPath = new ThemeIcon("warning", new ThemeColor("list.warningForeground"));
-    } else {
-      this.iconPath = new ThemeIcon("check-circle");
-    }
-    const { line } = match.range.start;
-    this.command = {
-      command: "vscode.open",
-      title: "Open",
-      arguments: [
-        Uri.parse(uri),
-        { selection: new Range(new Position(line, 0), new Position(line, 0)) },
-      ],
-    };
+export type CommentItemTreeItem = TreeItem & {
+  readonly kind: "commentItem";
+};
+export function createCommentItemTreeItem(
+  match: TagMatch,
+  uri: string,
+  label: string,
+): CommentItemTreeItem {
+  const item = Object.assign(new TreeItem(label, TreeItemCollapsibleState.None), {
+    kind: "commentItem" as const,
+  });
+  item.contextValue = "commentItem";
+  if (match.key === "fixme") {
+    item.iconPath = new ThemeIcon("warning", new ThemeColor("list.warningForeground"));
+  } else {
+    item.iconPath = new ThemeIcon("check-circle");
   }
+  const { line } = match.range.start;
+  item.command = {
+    command: "vscode.open",
+    title: "Open",
+    arguments: [
+      Uri.parse(uri),
+      { selection: new Range(new Position(line, 0), new Position(line, 0)) },
+    ],
+  };
+  return item;
 }
 
-type MarkersTreeNode =
+export type MarkersTreeNode =
   | SectionTreeItem
   | MarkerFileTreeItem
   | BookmarkItemTreeItem
   | CommentItemTreeItem
   | PlaceholderTreeItem;
 
-class MarkersTreeProvider implements TreeDataProvider<MarkersTreeNode> {
-  private readonly _onDidChangeTreeData = new EventEmitter<undefined>();
-  readonly onDidChangeTreeData: Event<undefined> = this._onDidChangeTreeData.event;
+export type MarkersTreeProvider = {
+  onDidChangeTreeData: Event<undefined>;
+  getTreeItem(element: MarkersTreeNode): TreeItem;
+  getChildren(element?: MarkersTreeNode): MarkersTreeNode[];
+  setVisible(v: boolean): void;
+  refreshBookmarks(uri?: string): void;
+  refreshComments(uri: string): void;
+  removeComment(uri: string): void;
+  refreshAll(): Promise<void>;
+};
 
-  private commentCache = new Map<string, TagMatch[]>();
-  private lineCache = new Map<string, Map<number, string>>();
-  private _visible = false;
-  private _dirty = true;
+function _getTreeItem(element: MarkersTreeNode): TreeItem {
+  return element;
+}
 
-  constructor(private readonly getBookmarks: () => Bookmark[]) {}
+export function createMarkersTreeProvider(getBookmarks: () => Bookmark[]): MarkersTreeProvider {
+  const _onDidChangeTreeData = new EventEmitter<undefined>();
+  const onDidChangeTreeData: Event<undefined> = _onDidChangeTreeData.event;
+  const commentCache = new Map<string, TagMatch[]>();
+  const lineCache = new Map<string, Map<number, string>>();
+  let _visible = false;
+  let _dirty = true;
 
-  setVisible(v: boolean): void {
-    this._visible = v;
-    if (v) {
-      if (this._dirty) {
-        void this.refreshAll();
+  async function _scanFileWithConfig(
+    uri: string,
+    multilineComments: boolean,
+    excludeLanguages: string[],
+  ): Promise<void> {
+    try {
+      const doc = await workspace.openTextDocument(Uri.parse(uri));
+      if (excludeLanguages.includes(doc.languageId)) return;
+      const matches = parseDocument(doc, multilineComments);
+      if (matches.length > 0) {
+        commentCache.set(uri, matches);
       } else {
-        this._onDidChangeTreeData.fire(undefined);
+        commentCache.delete(uri);
       }
+    } catch {
+      // File unavailable
     }
   }
 
-  refreshBookmarks(uri?: string): void {
-    if (!this._visible) {
-      this._dirty = true;
-      return;
-    }
-    if (uri) {
-      void this._loadBookmarkUri(uri).then(() => {
-        this._onDidChangeTreeData.fire(undefined);
-      });
-    } else {
-      void this._reloadAllBookmarks().then(() => {
-        this._onDidChangeTreeData.fire(undefined);
-      });
+  async function _scanFile(uri: string): Promise<void> {
+    const multilineComments = workspace
+      .getConfiguration("inline-markers.comments")
+      .get("multilineComments", true);
+    const excludeLanguages = workspace
+      .getConfiguration("inline-markers.comments")
+      .get("excludeLanguages", ["markdown", "mdx"]);
+    await _scanFileWithConfig(uri, multilineComments, excludeLanguages);
+  }
+
+  async function _loadBookmarkUri(uri: string): Promise<void> {
+    try {
+      const doc = await workspace.openTextDocument(Uri.parse(uri));
+      const lineMap = new Map<number, string>();
+      for (let i = 0; i < doc.lineCount; i++) {
+        lineMap.set(i, doc.lineAt(i).text.trim());
+      }
+      lineCache.set(uri, lineMap);
+    } catch {
+      // File unavailable
     }
   }
 
-  refreshComments(uri: string): void {
-    if (!this._visible) {
-      this._dirty = true;
-      return;
+  async function _reloadAllBookmarks(): Promise<void> {
+    const bookmarks = getBookmarks();
+    const uris = new Set(bookmarks.map((b) => b.uri));
+    lineCache.clear();
+    for (const uri of uris) {
+      await _loadBookmarkUri(uri);
     }
-    void this._scanFile(uri).then(() => {
-      this._onDidChangeTreeData.fire(undefined);
-    });
   }
 
-  removeComment(uri: string): void {
-    if (!this._visible) {
-      this._dirty = true;
-      return;
-    }
-    this.commentCache.delete(uri);
-    this._onDidChangeTreeData.fire(undefined);
-  }
-
-  async refreshAll(): Promise<void> {
-    if (!this._visible) {
-      this._onDidChangeTreeData.fire(undefined);
+  async function refreshAll(): Promise<void> {
+    if (!_visible) {
+      _onDidChangeTreeData.fire(undefined);
       return;
     }
 
@@ -174,98 +219,68 @@ class MarkersTreeProvider implements TreeDataProvider<MarkersTreeNode> {
       .getConfiguration("inline-markers.comments")
       .get("excludeLanguages", ["markdown", "mdx"]);
 
-    this.commentCache.clear();
+    commentCache.clear();
 
     for (const file of files) {
-      await this._scanFileWithConfig(file.toString(), multilineComments, excludeLanguages);
+      await _scanFileWithConfig(file.toString(), multilineComments, excludeLanguages);
     }
 
-    await this._reloadAllBookmarks();
+    await _reloadAllBookmarks();
 
-    this._dirty = false;
-    this._onDidChangeTreeData.fire(undefined);
+    _dirty = false;
+    _onDidChangeTreeData.fire(undefined);
   }
 
-  private async _scanFile(uri: string): Promise<void> {
-    const multilineComments = workspace
-      .getConfiguration("inline-markers.comments")
-      .get("multilineComments", true);
-    const excludeLanguages = workspace
-      .getConfiguration("inline-markers.comments")
-      .get("excludeLanguages", ["markdown", "mdx"]);
-    await this._scanFileWithConfig(uri, multilineComments, excludeLanguages);
-  }
-
-  private async _scanFileWithConfig(
-    uri: string,
-    multilineComments: boolean,
-    excludeLanguages: string[],
-  ): Promise<void> {
-    try {
-      const doc = await workspace.openTextDocument(Uri.parse(uri));
-      if (excludeLanguages.includes(doc.languageId)) return;
-      const matches = parseDocument(doc, multilineComments);
-      if (matches.length > 0) {
-        this.commentCache.set(uri, matches);
+  function setVisible(v: boolean): void {
+    _visible = v;
+    if (v) {
+      if (_dirty) {
+        void refreshAll();
       } else {
-        this.commentCache.delete(uri);
+        _onDidChangeTreeData.fire(undefined);
       }
-    } catch {
-      // File unavailable
     }
   }
 
-  private async _reloadAllBookmarks(): Promise<void> {
-    const bookmarks = this.getBookmarks();
-    const uris = new Set(bookmarks.map((b) => b.uri));
-    this.lineCache.clear();
-    for (const uri of uris) {
-      await this._loadBookmarkUri(uri);
+  function refreshBookmarks(uri?: string): void {
+    if (!_visible) {
+      _dirty = true;
+      return;
+    }
+    if (uri) {
+      void _loadBookmarkUri(uri).then(() => {
+        _onDidChangeTreeData.fire(undefined);
+      });
+    } else {
+      void _reloadAllBookmarks().then(() => {
+        _onDidChangeTreeData.fire(undefined);
+      });
     }
   }
 
-  private async _loadBookmarkUri(uri: string): Promise<void> {
-    try {
-      const doc = await workspace.openTextDocument(Uri.parse(uri));
-      const lineMap = new Map<number, string>();
-      for (let i = 0; i < doc.lineCount; i++) {
-        lineMap.set(i, doc.lineAt(i).text.trim());
-      }
-      this.lineCache.set(uri, lineMap);
-    } catch {
-      // File unavailable
+  function refreshComments(uri: string): void {
+    if (!_visible) {
+      _dirty = true;
+      return;
     }
+    void _scanFile(uri).then(() => {
+      _onDidChangeTreeData.fire(undefined);
+    });
   }
 
-  getTreeItem(element: MarkersTreeNode): TreeItem {
-    return element;
+  function removeComment(uri: string): void {
+    if (!_visible) {
+      _dirty = true;
+      return;
+    }
+    commentCache.delete(uri);
+    _onDidChangeTreeData.fire(undefined);
   }
 
-  getChildren(element?: MarkersTreeNode): MarkersTreeNode[] {
-    if (!element) {
-      return [
-        new SectionTreeItem("Bookmarks", "bookmarks"),
-        new SectionTreeItem("TODO / FIXME", "comments"),
-      ];
-    }
-
-    if (element instanceof SectionTreeItem) {
-      return element.sectionId === "bookmarks" ? this._getBookmarkFiles() : this._getCommentFiles();
-    }
-
-    if (element instanceof MarkerFileTreeItem) {
-      return element.sectionId === "bookmarks"
-        ? this._getBookmarkItems(element.bookmarkUri)
-        : this._getCommentItems(element.bookmarkUri);
-    }
-
-    return [];
-  }
-
-  private _getBookmarkFiles(): MarkersTreeNode[] {
-    const bookmarks = this.getBookmarks();
+  function _getBookmarkFiles(): MarkersTreeNode[] {
+    const bookmarks = getBookmarks();
     if (bookmarks.length === 0) {
-      return [new PlaceholderTreeItem("No bookmarks")];
+      return [createPlaceholderTreeItem("No bookmarks")];
     }
     const seen = new Set<string>();
     const fileItems: MarkerFileTreeItem[] = [];
@@ -274,49 +289,77 @@ class MarkersTreeProvider implements TreeDataProvider<MarkersTreeNode> {
         seen.add(b.uri);
         const parts = Uri.parse(b.uri).fsPath.split(/[\\/]/);
         const label = parts.at(-1) ?? b.uri;
-        fileItems.push(new MarkerFileTreeItem(b.uri, label, "bookmarks"));
+        fileItems.push(createMarkerFileTreeItem(b.uri, label, "bookmarks"));
       }
     }
     fileItems.sort((a, b) => a.bookmarkUri.localeCompare(b.bookmarkUri));
     return fileItems;
   }
 
-  private _getBookmarkItems(uri: string): MarkersTreeNode[] {
-    const bookmarks = this.getBookmarks()
+  function _getBookmarkItems(uri: string): MarkersTreeNode[] {
+    const bookmarks = getBookmarks()
       .filter((b) => b.uri === uri)
       .toSorted((a, b) => a.line - b.line);
     return bookmarks.map((b) => {
-      const lineMap = this.lineCache.get(b.uri);
+      const lineMap = lineCache.get(b.uri);
       const lineText = lineMap?.get(b.line);
       const label =
         lineText != null ? `L${b.line + 1}: ${lineText}` : `L${b.line + 1}: (unavailable)`;
-      return new BookmarkItemTreeItem(b, label);
+      return createBookmarkItemTreeItem(b, label);
     });
   }
 
-  private _getCommentFiles(): MarkersTreeNode[] {
-    if (this.commentCache.size === 0) {
-      return [new PlaceholderTreeItem("No TODO/FIXME found")];
+  function _getCommentFiles(): MarkersTreeNode[] {
+    if (commentCache.size === 0) {
+      return [createPlaceholderTreeItem("No TODO/FIXME found")];
     }
-    const uris = [...this.commentCache.keys()].toSorted();
+    const uris = [...commentCache.keys()].toSorted();
     return uris.map((uri) => {
       const parts = Uri.parse(uri).fsPath.split(/[\\/]/);
       const label = parts.at(-1) ?? uri;
-      return new MarkerFileTreeItem(uri, label, "comments");
+      return createMarkerFileTreeItem(uri, label, "comments");
     });
   }
 
-  private _getCommentItems(uri: string): MarkersTreeNode[] {
-    const matches = this.commentCache.get(uri) ?? [];
+  function _getCommentItems(uri: string): MarkersTreeNode[] {
+    const matches = commentCache.get(uri) ?? [];
     return matches
       .toSorted((a, b) => a.range.start.line - b.range.start.line)
       .map((match) => {
         const label = `L${match.range.start.line + 1}: ${match.message}`;
-        return new CommentItemTreeItem(match, uri, label);
+        return createCommentItemTreeItem(match, uri, label);
       });
   }
-}
 
-export function createMarkersTreeProvider(getBookmarks: () => Bookmark[]): MarkersTreeProvider {
-  return new MarkersTreeProvider(getBookmarks);
+  function getChildren(element?: MarkersTreeNode): MarkersTreeNode[] {
+    if (!element) {
+      return [
+        createSectionTreeItem("Bookmarks", "bookmarks"),
+        createSectionTreeItem("TODO / FIXME", "comments"),
+      ];
+    }
+
+    if (element.kind === "section") {
+      return element.sectionId === "bookmarks" ? _getBookmarkFiles() : _getCommentFiles();
+    }
+
+    if (element.kind === "markerFile") {
+      return element.sectionId === "bookmarks"
+        ? _getBookmarkItems(element.bookmarkUri)
+        : _getCommentItems(element.bookmarkUri);
+    }
+
+    return [];
+  }
+
+  return {
+    onDidChangeTreeData,
+    getTreeItem: _getTreeItem,
+    getChildren,
+    setVisible,
+    refreshBookmarks,
+    refreshComments,
+    removeComment,
+    refreshAll,
+  };
 }

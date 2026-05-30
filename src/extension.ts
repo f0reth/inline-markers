@@ -221,7 +221,7 @@ export function activate(context: ExtensionContext) {
       "inline-markers.bookmark.clearFile",
       async (arg?: BookmarkFileTreeItem) => {
         const uriStr =
-          arg instanceof BookmarkFileTreeItem
+          arg?.kind === "markerFile"
             ? arg.bookmarkUri
             : window.activeTextEditor?.document.uri.toString();
         if (!uriStr) return;
