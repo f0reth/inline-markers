@@ -6,93 +6,111 @@ export interface EventEmitterOptions {
   maxListeners?: number;
 }
 
-export class EventEmitter<Events extends EventMap> {
-  private readonly listeners = new Map<keyof Events, Set<EventListener<Events[keyof Events]>>>();
-  private readonly onceSet = new WeakSet<EventListener<Events[keyof Events]>>();
-  private readonly maxListeners: number;
-
-  constructor(opts: EventEmitterOptions = {}) {
-    this.maxListeners = opts.maxListeners ?? 100;
-  }
-
-  on<K extends keyof Events>(event: K, listener: EventListener<Events[K]>): this {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
-    const set = this.listeners.get(event)!;
-    if (set.size >= this.maxListeners) {
-      // FIXME: should throw instead of silently dropping the listener
-      console.warn(
-        `[EventEmitter] maxListeners (${this.maxListeners}) reached for event "${String(event)}"`,
-      );
-      return this;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    set.add(listener as EventListener<Events[keyof Events]>);
-    return this;
-  }
-
-  once<K extends keyof Events>(event: K, listener: EventListener<Events[K]>): this {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    this.onceSet.add(listener as EventListener<Events[keyof Events]>);
-    return this.on(event, listener);
-  }
-
-  off<K extends keyof Events>(event: K, listener: EventListener<Events[K]>): this {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    this.listeners.get(event)?.delete(listener as EventListener<Events[keyof Events]>);
-    return this;
-  }
-
+export type EventEmitter<Events extends EventMap> = {
+  on<K extends keyof Events>(event: K, listener: EventListener<Events[K]>): EventEmitter<Events>;
+  once<K extends keyof Events>(event: K, listener: EventListener<Events[K]>): EventEmitter<Events>;
+  off<K extends keyof Events>(event: K, listener: EventListener<Events[K]>): EventEmitter<Events>;
   // FIXME: async listeners are not awaited — errors in async listeners are unhandled
-  emit<K extends keyof Events>(event: K, ...args: Events[K]): boolean {
-    const set = this.listeners.get(event);
-    if (!set || set.size === 0) return false;
+  emit<K extends keyof Events>(event: K, ...args: Events[K]): boolean;
+  emitAsync<K extends keyof Events>(event: K, ...args: Events[K]): Promise<boolean>;
+  removeAllListeners(event?: keyof Events): EventEmitter<Events>;
+  listenerCount(event: keyof Events): number;
+};
 
-    const toRemove: EventListener<Events[keyof Events]>[] = [];
-    for (const listener of set) {
-      void listener(...(args as Events[keyof Events]));
-      if (this.onceSet.has(listener)) {
-        toRemove.push(listener);
+export function createEventEmitter<Events extends EventMap>(
+  opts: EventEmitterOptions = {},
+): EventEmitter<Events> {
+  const listeners = new Map<keyof Events, Set<EventListener<Events[keyof Events]>>>();
+  const onceSet = new WeakSet<EventListener<Events[keyof Events]>>();
+  const maxListeners = opts.maxListeners ?? 100;
+
+  const self: EventEmitter<Events> = {
+    on<K extends keyof Events>(event: K, listener: EventListener<Events[K]>): EventEmitter<Events> {
+      if (!listeners.has(event)) {
+        listeners.set(event, new Set());
       }
-    }
-    for (const listener of toRemove) {
-      set.delete(listener);
-      this.onceSet.delete(listener);
-    }
-    return true;
-  }
-
-  async emitAsync<K extends keyof Events>(event: K, ...args: Events[K]): Promise<boolean> {
-    const set = this.listeners.get(event);
-    if (!set || set.size === 0) return false;
-
-    const toRemove: EventListener<Events[keyof Events]>[] = [];
-    for (const listener of set) {
-      await listener(...(args as Events[keyof Events]));
-      if (this.onceSet.has(listener)) {
-        toRemove.push(listener);
+      const set = listeners.get(event)!;
+      if (set.size >= maxListeners) {
+        // FIXME: should throw instead of silently dropping the listener
+        console.warn(
+          `[EventEmitter] maxListeners (${maxListeners}) reached for event "${String(event)}"`,
+        );
+        return self;
       }
-    }
-    for (const listener of toRemove) {
-      set.delete(listener);
-      this.onceSet.delete(listener);
-    }
-    return true;
-  }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      set.add(listener as EventListener<Events[keyof Events]>);
+      return self;
+    },
 
-  removeAllListeners(event?: keyof Events): this {
-    if (event !== undefined) {
-      this.listeners.delete(event);
-    } else {
-      this.listeners.clear();
-    }
-    return this;
-  }
+    once<K extends keyof Events>(
+      event: K,
+      listener: EventListener<Events[K]>,
+    ): EventEmitter<Events> {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      onceSet.add(listener as EventListener<Events[keyof Events]>);
+      return self.on(event, listener);
+    },
 
-  listenerCount(event: keyof Events): number {
-    return this.listeners.get(event)?.size ?? 0;
-  }
+    off<K extends keyof Events>(
+      event: K,
+      listener: EventListener<Events[K]>,
+    ): EventEmitter<Events> {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      listeners.get(event)?.delete(listener as EventListener<Events[keyof Events]>);
+      return self;
+    },
+
+    emit<K extends keyof Events>(event: K, ...args: Events[K]): boolean {
+      const set = listeners.get(event);
+      if (!set || set.size === 0) return false;
+
+      const toRemove: EventListener<Events[keyof Events]>[] = [];
+      for (const listener of set) {
+        void listener(...(args as Events[keyof Events]));
+        if (onceSet.has(listener)) {
+          toRemove.push(listener);
+        }
+      }
+      for (const listener of toRemove) {
+        set.delete(listener);
+        onceSet.delete(listener);
+      }
+      return true;
+    },
+
+    async emitAsync<K extends keyof Events>(event: K, ...args: Events[K]): Promise<boolean> {
+      const set = listeners.get(event);
+      if (!set || set.size === 0) return false;
+
+      const toRemove: EventListener<Events[keyof Events]>[] = [];
+      for (const listener of set) {
+        await listener(...(args as Events[keyof Events]));
+        if (onceSet.has(listener)) {
+          toRemove.push(listener);
+        }
+      }
+      for (const listener of toRemove) {
+        set.delete(listener);
+        onceSet.delete(listener);
+      }
+      return true;
+    },
+
+    removeAllListeners(event?: keyof Events): EventEmitter<Events> {
+      if (event !== undefined) {
+        listeners.delete(event);
+      } else {
+        listeners.clear();
+      }
+      return self;
+    },
+
+    listenerCount(event: keyof Events): number {
+      return listeners.get(event)?.size ?? 0;
+    },
+  };
+
+  return self;
 }
 
 export interface AppEvents extends EventMap {
@@ -103,4 +121,4 @@ export interface AppEvents extends EventMap {
   userLoggedOut: [userId: string];
 }
 
-export const appEvents = new EventEmitter<AppEvents>({ maxListeners: 200 });
+export const appEvents = createEventEmitter<AppEvents>({ maxListeners: 200 });

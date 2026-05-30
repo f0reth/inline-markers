@@ -34,57 +34,44 @@ export interface LoggerOptions {
   transports?: LogTransport[];
 }
 
-export class Logger {
-  private readonly level: LogLevel;
-  private readonly namespace: string;
-  private readonly transports: LogTransport[];
-
-  constructor(opts: LoggerOptions = {}) {
-    this.level = opts.level ?? "info";
-    this.namespace = opts.namespace ?? "app";
-    this.transports = opts.transports ?? [consoleTransport];
-  }
-
+export type Logger = {
   // TODO: add structured context that is merged into every log entry
-  debug(message: string, context?: Record<string, unknown>): void {
-    this.emit("debug", message, context);
-  }
+  debug(message: string, context?: Record<string, unknown>): void;
+  info(message: string, context?: Record<string, unknown>): void;
+  warn(message: string, context?: Record<string, unknown>): void;
+  error(message: string, context?: Record<string, unknown>): void;
+  child(namespace: string): Logger;
+};
 
-  info(message: string, context?: Record<string, unknown>): void {
-    this.emit("info", message, context);
-  }
-
-  warn(message: string, context?: Record<string, unknown>): void {
-    this.emit("warn", message, context);
-  }
-
-  error(message: string, context?: Record<string, unknown>): void {
-    this.emit("error", message, context);
-  }
+export function createLogger(opts: LoggerOptions = {}): Logger {
+  const level = opts.level ?? "info";
+  const namespace = opts.namespace ?? "app";
+  const transports = opts.transports ?? [consoleTransport];
 
   // FIXME: entries emitted during transport errors are silently dropped
-  private emit(level: LogLevel, message: string, context?: Record<string, unknown>): void {
-    if (LEVEL_RANK[level] < LEVEL_RANK[this.level]) return;
+  function emit(logLevel: LogLevel, message: string, context?: Record<string, unknown>): void {
+    if (LEVEL_RANK[logLevel] < LEVEL_RANK[level]) return;
 
     const entry: LogEntry = {
-      level,
-      message: `[${this.namespace}] ${message}`,
+      level: logLevel,
+      message: `[${namespace}] ${message}`,
       timestamp: Date.now(),
       context,
     };
 
-    for (const transport of this.transports) {
+    for (const transport of transports) {
       transport(entry);
     }
   }
 
-  child(namespace: string): Logger {
-    return new Logger({
-      level: this.level,
-      namespace: `${this.namespace}:${namespace}`,
-      transports: this.transports,
-    });
-  }
+  return {
+    debug: (message, context) => emit("debug", message, context),
+    info: (message, context) => emit("info", message, context),
+    warn: (message, context) => emit("warn", message, context),
+    error: (message, context) => emit("error", message, context),
+    child: (childNamespace) =>
+      createLogger({ level, namespace: `${namespace}:${childNamespace}`, transports }),
+  };
 }
 
 // TODO: flush buffered entries before process exits
@@ -104,4 +91,4 @@ export function createBufferedTransport(maxEntries = 500): {
   };
 }
 
-export const logger = new Logger({ namespace: "app" });
+export const logger = createLogger({ namespace: "app" });

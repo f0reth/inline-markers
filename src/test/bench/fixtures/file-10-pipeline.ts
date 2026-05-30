@@ -6,45 +6,59 @@ export interface PipelineStep<I, O> {
 }
 
 // NOTE: each step's output type must match the next step's input type — enforce this at the call site
-export class Pipeline<T> {
-  private readonly steps: PipelineStep<unknown, unknown>[] = [];
-
-  pipe<O>(name: string, fn: StepFn<T, O>): Pipeline<O> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    this.steps.push({ name, fn: fn as StepFn<unknown, unknown> });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    return this as unknown as Pipeline<O>;
-  }
-
-  async run(input: T): Promise<T> {
-    let current: unknown = input;
-    for (const step of this.steps) {
-      // TODO: add per-step timing and expose as pipeline metrics
-      current = await step.fn(current);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    return current as T;
-  }
-
+export type Pipeline<T> = {
+  pipe<O>(name: string, fn: StepFn<T, O>): Pipeline<O>;
+  run(input: T): Promise<T>;
   // FIXME: error does not include the step name that failed
-  async runSafe(
-    input: T,
-  ): Promise<{ ok: true; value: T } | { ok: false; error: Error; step: string }> {
-    let current: unknown = input;
-    for (const step of this.steps) {
-      try {
+  runSafe(input: T): Promise<{ ok: true; value: T } | { ok: false; error: Error; step: string }>;
+};
+
+export function createPipeline<T>(): Pipeline<T> {
+  const steps: PipelineStep<unknown, unknown>[] = [];
+
+  const self: Pipeline<T> = {
+    pipe<O>(name: string, fn: StepFn<T, O>): Pipeline<O> {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      steps.push({ name, fn: fn as StepFn<unknown, unknown> });
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      return self as unknown as Pipeline<O>;
+    },
+
+    async run(input: T): Promise<T> {
+      let current: unknown = input;
+      for (const step of steps) {
+        // TODO: add per-step timing and expose as pipeline metrics
         current = await step.fn(current);
-      } catch (e) {
-        return { ok: false, error: e instanceof Error ? e : new Error(String(e)), step: step.name };
       }
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    return { ok: true, value: current as T };
-  }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      return current as T;
+    },
+
+    async runSafe(
+      input: T,
+    ): Promise<{ ok: true; value: T } | { ok: false; error: Error; step: string }> {
+      let current: unknown = input;
+      for (const step of steps) {
+        try {
+          current = await step.fn(current);
+        } catch (e) {
+          return {
+            ok: false,
+            error: e instanceof Error ? e : new Error(String(e)),
+            step: step.name,
+          };
+        }
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      return { ok: true, value: current as T };
+    },
+  };
+
+  return self;
 }
 
 export function pipeline<T>(): Pipeline<T> {
-  return new Pipeline<T>();
+  return createPipeline<T>();
 }
 
 export interface DataRecord {

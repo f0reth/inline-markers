@@ -7,59 +7,64 @@ export interface ConfigSchema<T extends ConfigMap> {
   validators?: { [K in keyof T]?: (v: ConfigValue) => boolean };
 }
 
-export class ConfigManager<T extends ConfigMap> {
-  private values: T;
-  private readonly schema: ConfigSchema<T>;
-  private readonly listeners = new Map<keyof T, Set<(v: ConfigValue) => void>>();
+export type ConfigManager<T extends ConfigMap> = {
+  // NOTE: later sources override earlier ones; call in order: defaults → file → env → CLI
+  load(source: Partial<T>): void;
+  get<K extends keyof T>(key: K): T[K];
+  getAll(): Readonly<T>;
+  // TODO: support wildcard listeners (key = "*")
+  onChange<K extends keyof T>(key: K, listener: (v: T[K]) => void): () => void;
+};
 
-  constructor(schema: ConfigSchema<T>) {
-    this.schema = schema;
-    this.values = { ...schema.defaults };
+export function createConfigManager<T extends ConfigMap>(
+  schema: ConfigSchema<T>,
+): ConfigManager<T> {
+  const values: T = { ...schema.defaults };
+  const listeners = new Map<keyof T, Set<(v: ConfigValue) => void>>();
+
+  function notify(key: keyof T, value: ConfigValue): void {
+    listeners.get(key)?.forEach((cb) => cb(value));
   }
 
-  // NOTE: later sources override earlier ones; call in order: defaults → file → env → CLI
-  load(source: Partial<T>): void {
+  function load(source: Partial<T>): void {
     for (const key of Object.keys(source) as (keyof T)[]) {
       const value = source[key];
       if (value === undefined) continue;
 
-      const validator = this.schema.validators?.[key];
+      const validator = schema.validators?.[key];
       if (validator && !validator(value)) {
         throw new Error(`Invalid value for config key "${String(key)}": ${String(value)}`);
       }
 
-      const prev = this.values[key];
-      this.values[key] = value as T[keyof T];
+      const prev = values[key];
+      values[key] = value as T[keyof T];
 
       if (prev !== value) {
-        this.notify(key, value);
+        notify(key, value);
       }
     }
   }
 
-  get<K extends keyof T>(key: K): T[K] {
-    return this.values[key];
+  function get<K extends keyof T>(key: K): T[K] {
+    return values[key];
   }
 
-  getAll(): Readonly<T> {
-    return this.values;
+  function getAll(): Readonly<T> {
+    return values;
   }
 
-  // TODO: support wildcard listeners (key = "*")
-  onChange<K extends keyof T>(key: K, listener: (v: T[K]) => void): () => void {
-    if (!this.listeners.has(key)) {
-      this.listeners.set(key, new Set());
+  function onChange<K extends keyof T>(key: K, listener: (v: T[K]) => void): () => void {
+    if (!listeners.has(key)) {
+      listeners.set(key, new Set());
     }
-    const set = this.listeners.get(key)!;
+    const set = listeners.get(key)!;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     const cb = (v: ConfigValue) => listener(v as T[K]);
     set.add(cb);
     return () => set.delete(cb);
   }
 
-  private notify(key: keyof T, value: ConfigValue): void {
-    this.listeners.get(key)?.forEach((cb) => cb(value));
-  }
+  return { load, get, getAll, onChange };
 }
 
 export interface AppConfig extends ConfigMap {
@@ -98,4 +103,4 @@ export const appConfigSchema: ConfigSchema<AppConfig> = {
   },
 };
 
-export const appConfig = new ConfigManager(appConfigSchema);
+export const appConfig = createConfigManager(appConfigSchema);

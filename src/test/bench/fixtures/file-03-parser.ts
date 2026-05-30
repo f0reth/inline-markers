@@ -33,143 +33,139 @@ const KEYWORDS = new Set([
   "export",
 ]);
 
-export class Lexer {
-  private pos = 0;
-  private line = 1;
-  private column = 1;
+export type Lexer = {
+  tokenize(): Token[];
+};
 
-  constructor(private readonly source: string) {}
+export function createLexer(source: string): Lexer {
+  let pos = 0;
+  let line = 1;
+  let column = 1;
 
-  tokenize(): Token[] {
+  function scanWhitespace(start: number, startLine: number, startCol: number): Token {
+    while (pos < source.length && /\s/.test(source[pos])) {
+      if (source[pos] === "\n") {
+        line++;
+        column = 1;
+      } else {
+        column++;
+      }
+      pos++;
+    }
+    return {
+      type: "whitespace",
+      value: source.slice(start, pos),
+      start,
+      end: pos,
+      line: startLine,
+      column: startCol,
+    };
+  }
+
+  function scanNumber(start: number, startLine: number, startCol: number): Token {
+    // FIXME: does not handle hex literals (0x...) or scientific notation (1e10)
+    while (pos < source.length && /[0-9.]/.test(source[pos])) {
+      pos++;
+      column++;
+    }
+    return {
+      type: "number",
+      value: source.slice(start, pos),
+      start,
+      end: pos,
+      line: startLine,
+      column: startCol,
+    };
+  }
+
+  function scanString(start: number, startLine: number, startCol: number): Token {
+    const quote = source[pos];
+    pos++;
+    column++;
+    // HACK: naive implementation, does not handle escaped quotes
+    while (pos < source.length && source[pos] !== quote) {
+      pos++;
+      column++;
+    }
+    if (pos < source.length) {
+      pos++;
+      column++;
+    }
+    return {
+      type: "string",
+      value: source.slice(start, pos),
+      start,
+      end: pos,
+      line: startLine,
+      column: startCol,
+    };
+  }
+
+  function scanIdentifier(start: number, startLine: number, startCol: number): Token {
+    while (pos < source.length && /[a-zA-Z0-9_$]/.test(source[pos])) {
+      pos++;
+      column++;
+    }
+    const value = source.slice(start, pos);
+    const type: TokenType = KEYWORDS.has(value) ? "keyword" : "identifier";
+    return { type, value, start, end: pos, line: startLine, column: startCol };
+  }
+
+  function scanLineComment(start: number, startLine: number, startCol: number): Token {
+    while (pos < source.length && source[pos] !== "\n") {
+      pos++;
+      column++;
+    }
+    return {
+      type: "comment",
+      value: source.slice(start, pos),
+      start,
+      end: pos,
+      line: startLine,
+      column: startCol,
+    };
+  }
+
+  function scanOperator(start: number, startLine: number, startCol: number): Token {
+    pos++;
+    column++;
+    return {
+      type: "operator",
+      value: source.slice(start, pos),
+      start,
+      end: pos,
+      line: startLine,
+      column: startCol,
+    };
+  }
+
+  function nextToken(): Token {
+    const start = pos;
+    const startLine = line;
+    const startCol = column;
+    const ch = source[pos];
+
+    if (/\s/.test(ch)) return scanWhitespace(start, startLine, startCol);
+    if (/[0-9]/.test(ch)) return scanNumber(start, startLine, startCol);
+    if (ch === '"' || ch === "'") return scanString(start, startLine, startCol);
+    if (/[a-zA-Z_$]/.test(ch)) return scanIdentifier(start, startLine, startCol);
+    if (ch === "/" && source[pos + 1] === "/") return scanLineComment(start, startLine, startCol);
+    return scanOperator(start, startLine, startCol);
+  }
+
+  function tokenize(): Token[] {
     const tokens: Token[] = [];
-    while (this.pos < this.source.length) {
-      const token = this.nextToken();
+    while (pos < source.length) {
+      const token = nextToken();
       if (token.type !== "whitespace") {
         tokens.push(token);
       }
     }
-    tokens.push({
-      type: "eof",
-      value: "",
-      start: this.pos,
-      end: this.pos,
-      line: this.line,
-      column: this.column,
-    });
+    tokens.push({ type: "eof", value: "", start: pos, end: pos, line, column });
     return tokens;
   }
 
-  private nextToken(): Token {
-    const start = this.pos;
-    const startLine = this.line;
-    const startCol = this.column;
-    const ch = this.source[this.pos];
-
-    if (/\s/.test(ch)) return this.scanWhitespace(start, startLine, startCol);
-    if (/[0-9]/.test(ch)) return this.scanNumber(start, startLine, startCol);
-    if (ch === '"' || ch === "'") return this.scanString(start, startLine, startCol);
-    if (/[a-zA-Z_$]/.test(ch)) return this.scanIdentifier(start, startLine, startCol);
-    if (ch === "/" && this.source[this.pos + 1] === "/")
-      return this.scanLineComment(start, startLine, startCol);
-    return this.scanOperator(start, startLine, startCol);
-  }
-
-  private scanWhitespace(start: number, line: number, column: number): Token {
-    while (this.pos < this.source.length && /\s/.test(this.source[this.pos])) {
-      if (this.source[this.pos] === "\n") {
-        this.line++;
-        this.column = 1;
-      } else {
-        this.column++;
-      }
-      this.pos++;
-    }
-    return {
-      type: "whitespace",
-      value: this.source.slice(start, this.pos),
-      start,
-      end: this.pos,
-      line,
-      column,
-    };
-  }
-
-  private scanNumber(start: number, line: number, column: number): Token {
-    // FIXME: does not handle hex literals (0x...) or scientific notation (1e10)
-    while (this.pos < this.source.length && /[0-9.]/.test(this.source[this.pos])) {
-      this.pos++;
-      this.column++;
-    }
-    return {
-      type: "number",
-      value: this.source.slice(start, this.pos),
-      start,
-      end: this.pos,
-      line,
-      column,
-    };
-  }
-
-  private scanString(start: number, line: number, column: number): Token {
-    const quote = this.source[this.pos];
-    this.pos++;
-    this.column++;
-    // HACK: naive implementation, does not handle escaped quotes
-    while (this.pos < this.source.length && this.source[this.pos] !== quote) {
-      this.pos++;
-      this.column++;
-    }
-    if (this.pos < this.source.length) {
-      this.pos++;
-      this.column++;
-    }
-    return {
-      type: "string",
-      value: this.source.slice(start, this.pos),
-      start,
-      end: this.pos,
-      line,
-      column,
-    };
-  }
-
-  private scanIdentifier(start: number, line: number, column: number): Token {
-    while (this.pos < this.source.length && /[a-zA-Z0-9_$]/.test(this.source[this.pos])) {
-      this.pos++;
-      this.column++;
-    }
-    const value = this.source.slice(start, this.pos);
-    const type: TokenType = KEYWORDS.has(value) ? "keyword" : "identifier";
-    return { type, value, start, end: this.pos, line, column };
-  }
-
-  private scanLineComment(start: number, line: number, column: number): Token {
-    while (this.pos < this.source.length && this.source[this.pos] !== "\n") {
-      this.pos++;
-      this.column++;
-    }
-    return {
-      type: "comment",
-      value: this.source.slice(start, this.pos),
-      start,
-      end: this.pos,
-      line,
-      column,
-    };
-  }
-
-  private scanOperator(start: number, line: number, column: number): Token {
-    this.pos++;
-    this.column++;
-    return {
-      type: "operator",
-      value: this.source.slice(start, this.pos),
-      start,
-      end: this.pos,
-      line,
-      column,
-    };
-  }
+  return { tokenize };
 }
 
 export interface AstNode {
@@ -191,18 +187,20 @@ export interface StringLiteral extends AstNode {
 // FIXME: AstNode union is not exhaustive — add all node types before using in a type-guard
 export type Expression = NumberLiteral | StringLiteral;
 
-export class Parser {
-  private pos = 0;
-
-  constructor(private readonly tokens: Token[]) {}
-
+export type Parser = {
   // TODO: implement full expression parsing
-  parseExpression(): Expression | null {
-    const token = this.tokens[this.pos];
+  parseExpression(): Expression | null;
+};
+
+export function createParser(tokens: Token[]): Parser {
+  let pos = 0;
+
+  function parseExpression(): Expression | null {
+    const token = tokens[pos];
     if (!token || token.type === "eof") return null;
 
     if (token.type === "number") {
-      this.pos++;
+      pos++;
       return {
         type: "NumberLiteral",
         value: parseFloat(token.value),
@@ -212,7 +210,7 @@ export class Parser {
     }
 
     if (token.type === "string") {
-      this.pos++;
+      pos++;
       return {
         type: "StringLiteral",
         value: token.value.slice(1, -1),
@@ -223,4 +221,6 @@ export class Parser {
 
     return null;
   }
+
+  return { parseExpression };
 }
