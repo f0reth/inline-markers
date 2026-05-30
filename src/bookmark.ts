@@ -1,7 +1,5 @@
 import {
   DecorationOptions,
-  Event,
-  EventEmitter,
   ExtensionContext,
   Position,
   Range,
@@ -9,151 +7,13 @@ import {
   TextDocumentChangeEvent,
   TextEditor,
   TextEditorDecorationType,
-  ThemeIcon,
-  TreeDataProvider,
-  TreeItem,
-  TreeItemCollapsibleState,
   Uri,
   window,
-  workspace,
 } from "vscode";
 
 import { Bookmark } from "./types";
 
 const STORAGE_KEY = "inline-markers.bookmarks";
-
-export class BookmarkFileTreeItem extends TreeItem {
-  readonly bookmarkUri: string;
-
-  constructor(uri: string, label: string) {
-    super(label, TreeItemCollapsibleState.Expanded);
-    this.bookmarkUri = uri;
-    this.contextValue = "bookmarkFile";
-    this.resourceUri = Uri.parse(uri);
-    this.iconPath = ThemeIcon.File;
-    this.command = {
-      command: "vscode.open",
-      title: "Open File",
-      arguments: [Uri.parse(uri)],
-    };
-  }
-}
-
-export class BookmarkItemTreeItem extends TreeItem {
-  readonly bookmark: Bookmark;
-
-  constructor(bookmark: Bookmark, label: string) {
-    super(label, TreeItemCollapsibleState.None);
-    this.bookmark = bookmark;
-    this.contextValue = "bookmarkItem";
-    this.iconPath = new ThemeIcon("bookmark");
-    this.command = {
-      command: "inline-markers.bookmark._jump",
-      title: "Jump",
-      arguments: [bookmark],
-    };
-  }
-}
-
-type BookmarkTreeNode = BookmarkFileTreeItem | BookmarkItemTreeItem;
-
-class BookmarkTreeProvider implements TreeDataProvider<BookmarkTreeNode> {
-  private readonly _onDidChangeTreeData = new EventEmitter<undefined>();
-  readonly onDidChangeTreeData: Event<undefined> = this._onDidChangeTreeData.event;
-
-  private lineCache = new Map<string, Map<number, string>>();
-  private _visible = false;
-
-  constructor(private readonly getBookmarks: () => Bookmark[]) {}
-
-  setVisible(v: boolean): void {
-    this._visible = v;
-    if (v) {
-      void this._reloadAll().then(() => {
-        this._onDidChangeTreeData.fire(undefined);
-      });
-    }
-  }
-
-  refreshUri(uri: string): void {
-    if (this._visible) {
-      void this._loadUri(uri).then(() => {
-        this._onDidChangeTreeData.fire(undefined);
-      });
-    } else {
-      this._onDidChangeTreeData.fire(undefined);
-    }
-  }
-
-  refreshAll(): void {
-    if (this._visible) {
-      void this._reloadAll().then(() => {
-        this._onDidChangeTreeData.fire(undefined);
-      });
-    } else {
-      this._onDidChangeTreeData.fire(undefined);
-    }
-  }
-
-  private async _reloadAll(): Promise<void> {
-    const bookmarks = this.getBookmarks();
-    const uris = new Set(bookmarks.map((b) => b.uri));
-    this.lineCache.clear();
-    for (const uri of uris) {
-      await this._loadUri(uri);
-    }
-  }
-
-  private async _loadUri(uri: string): Promise<void> {
-    try {
-      const doc = await workspace.openTextDocument(Uri.parse(uri));
-      const lineMap = new Map<number, string>();
-      for (let i = 0; i < doc.lineCount; i++) {
-        lineMap.set(i, doc.lineAt(i).text.trim());
-      }
-      this.lineCache.set(uri, lineMap);
-    } catch {
-      // File unavailable
-    }
-  }
-
-  getTreeItem(element: BookmarkTreeNode): TreeItem {
-    return element;
-  }
-
-  getChildren(element?: BookmarkTreeNode): BookmarkTreeNode[] {
-    if (!element) {
-      const bookmarks = this.getBookmarks();
-      const seen = new Set<string>();
-      const fileItems: BookmarkFileTreeItem[] = [];
-      for (const b of bookmarks) {
-        if (!seen.has(b.uri)) {
-          seen.add(b.uri);
-          const vscUri = Uri.parse(b.uri);
-          const parts = vscUri.fsPath.split(/[\\/]/);
-          const label = parts.at(-1) ?? b.uri;
-          fileItems.push(new BookmarkFileTreeItem(b.uri, label));
-        }
-      }
-      return fileItems;
-    }
-
-    if (element instanceof BookmarkFileTreeItem) {
-      const bookmarks = this.getBookmarks()
-        .filter((b) => b.uri === element.bookmarkUri)
-        .toSorted((a, b) => a.line - b.line);
-      return bookmarks.map((b) => {
-        const lineMap = this.lineCache.get(b.uri);
-        const lineText = lineMap?.get(b.line);
-        const label =
-          lineText != null ? `L${b.line + 1}: ${lineText}` : `L${b.line + 1}: (unavailable)`;
-        return new BookmarkItemTreeItem(b, label);
-      });
-    }
-
-    return [];
-  }
-}
 
 export function applyShift(
   bookmarks: Bookmark[],
@@ -185,7 +45,7 @@ export function applyShift(
 
 type BookmarkContext = Pick<ExtensionContext, "asAbsolutePath" | "workspaceState">;
 
-export function createBookmarkManager(context: BookmarkContext) {
+export function createBookmarkManager(context: BookmarkContext, onChanged: (uri?: string) => void) {
   const gutterDeco: TextEditorDecorationType = window.createTextEditorDecorationType({
     gutterIconPath: context.asAbsolutePath("images/bookmark.svg"),
     gutterIconSize: "80%",
@@ -198,8 +58,6 @@ export function createBookmarkManager(context: BookmarkContext) {
   function persist(bookmarks: Bookmark[]): Thenable<void> {
     return context.workspaceState.update(STORAGE_KEY, bookmarks);
   }
-
-  const treeProvider = new BookmarkTreeProvider(load);
 
   function updateDecorations(editor: TextEditor | undefined): void {
     if (!editor) return;
@@ -221,27 +79,27 @@ export function createBookmarkManager(context: BookmarkContext) {
     }
     await persist(bookmarks);
     updateDecorations(window.activeTextEditor);
-    treeProvider.refreshUri(uriStr);
+    onChanged(uriStr);
   }
 
   async function clearAll(): Promise<void> {
     await persist([]);
     updateDecorations(window.activeTextEditor);
-    treeProvider.refreshAll();
+    onChanged();
   }
 
   async function clearFile(uriStr: string): Promise<void> {
     const bookmarks = load().filter((b) => b.uri !== uriStr);
     await persist(bookmarks);
     updateDecorations(window.activeTextEditor);
-    treeProvider.refreshUri(uriStr);
+    onChanged(uriStr);
   }
 
   async function deleteBookmark(bookmark: Bookmark): Promise<void> {
     const bookmarks = load().filter((b) => !(b.uri === bookmark.uri && b.line === bookmark.line));
     await persist(bookmarks);
     updateDecorations(window.activeTextEditor);
-    treeProvider.refreshUri(bookmark.uri);
+    onChanged(bookmark.uri);
   }
 
   function _jump(bookmark: Bookmark): void {
@@ -308,7 +166,7 @@ export function createBookmarkManager(context: BookmarkContext) {
   }
 
   return {
-    treeProvider,
+    getBookmarks: load,
     updateDecorations,
     toggle,
     clearAll,

@@ -29,7 +29,7 @@ const URI_B = "file:///workspace/b.ts";
 suite("BookmarkManager — toggle", () => {
   test("toggle adds a bookmark on first call", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await mgr.toggle(URI_A, 5);
     const stored = ctx.workspaceState.get<Bookmark[]>("inline-markers.bookmarks", []);
     assert.strictEqual(stored.length, 1);
@@ -40,7 +40,7 @@ suite("BookmarkManager — toggle", () => {
 
   test("toggle removes an existing bookmark on second call", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await mgr.toggle(URI_A, 5);
     await mgr.toggle(URI_A, 5);
     const stored = ctx.workspaceState.get<Bookmark[]>("inline-markers.bookmarks", []);
@@ -50,7 +50,7 @@ suite("BookmarkManager — toggle", () => {
 
   test("toggle on different lines creates independent bookmarks", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await mgr.toggle(URI_A, 3);
     await mgr.toggle(URI_A, 10);
     const stored = ctx.workspaceState.get<Bookmark[]>("inline-markers.bookmarks", []);
@@ -60,7 +60,7 @@ suite("BookmarkManager — toggle", () => {
 
   test("toggle on different URIs creates independent bookmarks", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await mgr.toggle(URI_A, 0);
     await mgr.toggle(URI_B, 0);
     const stored = ctx.workspaceState.get<Bookmark[]>("inline-markers.bookmarks", []);
@@ -70,7 +70,7 @@ suite("BookmarkManager — toggle", () => {
 
   test("toggling a bookmark in file A does not affect file B", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await mgr.toggle(URI_A, 1);
     await mgr.toggle(URI_B, 1);
     await mgr.toggle(URI_A, 1);
@@ -84,7 +84,7 @@ suite("BookmarkManager — toggle", () => {
 suite("BookmarkManager — clearAll", () => {
   test("clearAll removes all bookmarks across files", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await mgr.toggle(URI_A, 0);
     await mgr.toggle(URI_B, 5);
     await mgr.clearAll();
@@ -95,7 +95,7 @@ suite("BookmarkManager — clearAll", () => {
 
   test("clearAll on empty store does not throw", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await assert.doesNotReject(() => mgr.clearAll());
     mgr.dispose();
   });
@@ -104,7 +104,7 @@ suite("BookmarkManager — clearAll", () => {
 suite("BookmarkManager — clearFile", () => {
   test("clearFile removes only bookmarks for the target URI", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await mgr.toggle(URI_A, 1);
     await mgr.toggle(URI_A, 2);
     await mgr.toggle(URI_B, 3);
@@ -119,7 +119,7 @@ suite("BookmarkManager — clearFile", () => {
 suite("BookmarkManager — deleteBookmark", () => {
   test("deleteBookmark removes a single bookmark", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await mgr.toggle(URI_A, 5);
     await mgr.toggle(URI_A, 10);
     const stored = ctx.workspaceState.get<Bookmark[]>("inline-markers.bookmarks", []);
@@ -133,7 +133,7 @@ suite("BookmarkManager — deleteBookmark", () => {
 suite("BookmarkManager — getBookmarkedLines", () => {
   test("getBookmarkedLines returns Set of lines for a URI", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await mgr.toggle(URI_A, 3);
     await mgr.toggle(URI_A, 7);
     const lines = mgr.getBookmarkedLines(vscode.Uri.parse(URI_A));
@@ -145,7 +145,7 @@ suite("BookmarkManager — getBookmarkedLines", () => {
 
   test("getBookmarkedLines returns empty set for URI with no bookmarks", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     const lines = mgr.getBookmarkedLines(vscode.Uri.parse(URI_A));
     assert.strictEqual(lines.size, 0);
     mgr.dispose();
@@ -153,7 +153,7 @@ suite("BookmarkManager — getBookmarkedLines", () => {
 
   test("getBookmarkedLines excludes bookmarks from other URIs", async () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     await mgr.toggle(URI_B, 10);
     const lines = mgr.getBookmarkedLines(vscode.Uri.parse(URI_A));
     assert.strictEqual(lines.size, 0);
@@ -164,14 +164,14 @@ suite("BookmarkManager — getBookmarkedLines", () => {
 suite("BookmarkManager — navigateNext / navigatePrevious (no active editor)", () => {
   test("navigateNext does not throw when no active editor", () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     assert.doesNotThrow(() => mgr.navigateNext());
     mgr.dispose();
   });
 
   test("navigatePrevious does not throw when no active editor", () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     assert.doesNotThrow(() => mgr.navigatePrevious());
     mgr.dispose();
   });
@@ -180,7 +180,7 @@ suite("BookmarkManager — navigateNext / navigatePrevious (no active editor)", 
 suite("BookmarkManager — API surface", () => {
   test("createBookmarkManager returns expected API surface", () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     assert.strictEqual(typeof mgr.toggle, "function");
     assert.strictEqual(typeof mgr.clearAll, "function");
     assert.strictEqual(typeof mgr.clearFile, "function");
@@ -191,19 +191,19 @@ suite("BookmarkManager — API surface", () => {
     assert.strictEqual(typeof mgr.shiftBookmarks, "function");
     assert.strictEqual(typeof mgr.updateDecorations, "function");
     assert.strictEqual(typeof mgr.dispose, "function");
-    assert.ok(mgr.treeProvider);
+    assert.strictEqual(typeof mgr.getBookmarks, "function");
     mgr.dispose();
   });
 
   test("dispose does not throw", () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     assert.doesNotThrow(() => mgr.dispose());
   });
 
   test("dispose can be called twice without error", () => {
     const ctx = makeContext();
-    const mgr = createBookmarkManager(ctx);
+    const mgr = createBookmarkManager(ctx, () => {});
     assert.doesNotThrow(() => {
       mgr.dispose();
       mgr.dispose();

@@ -14,10 +14,15 @@ import {
   workspace,
 } from "vscode";
 
-import { BookmarkFileTreeItem, BookmarkItemTreeItem, createBookmarkManager } from "./bookmark";
+import { createBookmarkManager } from "./bookmark";
 import { createBetterComments } from "./comments";
 import { ILineOptions, createDiagnosticLine } from "./diagnostic-line";
 import { createGutterDecorators } from "./gutter";
+import {
+  BookmarkFileTreeItem,
+  BookmarkItemTreeItem,
+  createMarkersTreeProvider,
+} from "./markers-tree";
 import { Bookmark } from "./types";
 
 export let activationDuration = -1;
@@ -34,17 +39,27 @@ export function activate(context: ExtensionContext) {
 
   const better = createBetterComments(context);
 
-  const bookmarkManager = createBookmarkManager(context);
+  let onBookmarksChanged: (uri?: string) => void = (_uri) => {
+    void context;
+  };
+
+  const bookmarkManager = createBookmarkManager(context, (uri?) => onBookmarksChanged(uri));
   context.subscriptions.push({ dispose: () => bookmarkManager.dispose() });
 
-  const bookmarkTreeView = window.createTreeView("inline-markers.bookmarks", {
-    treeDataProvider: bookmarkManager.treeProvider,
+  const markersTreeProvider = createMarkersTreeProvider(bookmarkManager.getBookmarks);
+  onBookmarksChanged = (uri?) => {
+    if (uri) markersTreeProvider.refreshBookmarks(uri);
+    else markersTreeProvider.refreshBookmarks();
+  };
+
+  const markersTreeView = window.createTreeView("inline-markers.markers", {
+    treeDataProvider: markersTreeProvider,
     showCollapseAll: true,
   });
-  context.subscriptions.push(bookmarkTreeView);
+  context.subscriptions.push(markersTreeView);
   context.subscriptions.push(
-    bookmarkTreeView.onDidChangeVisibility((e) => {
-      bookmarkManager.treeProvider.setVisible(e.visible);
+    markersTreeView.onDidChangeVisibility((e) => {
+      markersTreeProvider.setVisible(e.visible);
     }),
   );
 
@@ -149,9 +164,35 @@ export function activate(context: ExtensionContext) {
         updateSettings();
         scheduleUpdate(true);
       }
+      if (
+        e.affectsConfiguration("inline-markers.comments.excludeLanguages") ||
+        e.affectsConfiguration("inline-markers.comments.multilineComments")
+      ) {
+        void markersTreeProvider.refreshAll();
+      }
     }),
     languages.onDidChangeDiagnostics(() => scheduleDiagnosticsUpdate()),
     { dispose: () => better.dispose() },
+  );
+
+  context.subscriptions.push(
+    workspace.onDidSaveTextDocument((doc) => {
+      markersTreeProvider.refreshComments(doc.uri.toString());
+    }),
+    workspace.onDidDeleteFiles((e) => {
+      for (const file of e.files) {
+        markersTreeProvider.removeComment(file.toString());
+      }
+    }),
+    workspace.onDidRenameFiles((e) => {
+      for (const { oldUri, newUri } of e.files) {
+        markersTreeProvider.removeComment(oldUri.toString());
+        markersTreeProvider.refreshComments(newUri.toString());
+      }
+    }),
+    commands.registerCommand("inline-markers.markers.refresh", () => {
+      void markersTreeProvider.refreshAll();
+    }),
   );
 
   context.subscriptions.push(
