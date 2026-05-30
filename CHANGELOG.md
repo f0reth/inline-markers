@@ -1,5 +1,44 @@
 # Change Log
 
+## [0.1.0] - 2026-05-30
+
+### Changed
+
+- **BREAKING: comment tag configuration redesigned.** The per-tag keys
+  (`inline-markers.comments.todo.*`, `fixme.*`, `important.*`, `question.*`,
+  `highlight.*`) are removed in favor of a single `inline-markers.comments.tags`
+  array. Each entry is `{ tag, color, bold?, italic?, strikethrough?, underline? }`
+  and array order defines match priority. Old customizations must be migrated.
+- **BREAKING: file exclusion is now glob-based.** `inline-markers.comments.excludeLanguages`
+  (language IDs) is replaced by `inline-markers.comments.exclude` (glob patterns,
+  default `["**/*.md", "**/*.mdx"]`).
+
+### Added
+
+- **User-defined comment tags**: any token can be highlighted, not just the built-in
+  five. Word tags (e.g. `TODO`, `FIXME`) also appear in the Markers sidebar.
+
+### Performance
+
+- **Single-pass comment scanner**: parsing was rewritten as one `vscode`-independent
+  scanner that runs a single alternation regex per layer and derives positions from a
+  prebuilt line index instead of `TextDocument.positionAt`. `analyzeDocument` is roughly
+  2x faster on 100/1000/10000-line documents.
+- **Lighter sidebar scanning**: the Markers tree scans via `workspace.fs` (raw bytes) or
+  already-open documents with bounded parallelism, instead of opening each document (and
+  its language server) just to scan it.
+
+### Removed
+
+- **Comment-tag gutter icons**: comment decorations no longer carry a gutter icon, since
+  there is no sensible default icon for arbitrary user-defined tags. Diagnostic gutter
+  icons (error/warning/info/hint) are unaffected.
+
+### Internal
+
+- In-memory bookmark cache with a per-file index and serialized persistence.
+- Comment/diagnostic-line cache release on document close, delete, and rename.
+
 ## [0.0.8] - 2026-05-29
 
 ### Added

@@ -8,7 +8,7 @@ A VS Code extension that enhances your coding experience with custom comment hig
 
 ## Features
 
-- **Custom Comment Highlights**: Color-coded highlights for `TODO`, `FIXME`, `!`, `?`, and `*`.
+- **Custom Comment Highlights**: Color-coded highlights for `TODO`, `FIXME`, `!`, `?`, and `*` — and any tag you define via `inline-markers.comments.tags`.
 - **Diagnostic Gutter Icons**: Clearly see errors and warnings in the editor gutter.
 - **Inline Diagnostic Messages**: Display error and warning messages directly at the end of the line.
 
@@ -48,7 +48,9 @@ You can customize the colors and visibility in VS Code Settings (`Ctrl+,`):
 - `inline-markers.gutter.enabled`: Toggle gutter icons.
 - `inline-markers.diagnosticLine.enabled`: Toggle inline messages.
 - `inline-markers.diagnosticLine.errorLabelBg`: Customize the background color of error messages.
-- `inline-markers.comments.fixme.color`: Change the FIXME tag color.
+- `inline-markers.comments.tags`: Define the comment tags to highlight — an array of `{ tag, color, bold?, italic?, strikethrough?, underline? }`. Array order sets match priority, and word tags (e.g. `TODO`) also appear in the Markers sidebar.
+- `inline-markers.comments.exclude`: Glob patterns where comment highlighting and scanning are disabled (default `**/*.md`, `**/*.mdx`).
+- `inline-markers.comments.multilineComments`: Toggle highlighting inside block (`/* */`) and JSDoc (`/** */`) comments.
 
 ---
 
@@ -60,7 +62,7 @@ You can customize the colors and visibility in VS Code Settings (`Ctrl+,`):
 
 ## 主な機能
 
-- **カスタムコメントハイライト**: `TODO`, `FIXME`, `!`, `?`, `*` を色分けして強調表示します。
+- **カスタムコメントハイライト**: `TODO`, `FIXME`, `!`, `?`, `*` を色分けして強調表示します。`inline-markers.comments.tags` で任意のタグを定義できます。
 - **診断ガーターアイコン**: エラーや警告をエディタの横（ガーター）にアイコンで表示します。
 - **インライン診断メッセージ**: エラーや警告のメッセージを、該当する行の末尾に直接表示します。
 
@@ -100,4 +102,6 @@ VS Code の設定画面 (`Ctrl+,`) から、表示のカスタマイズが可能
 - `inline-markers.gutter.enabled`: ガーターアイコンの有効/無効。
 - `inline-markers.diagnosticLine.enabled`: インラインメッセージの有効/無効。
 - `inline-markers.diagnosticLine.errorLabelBg`: エラーメッセージの背景色の変更。
-- `inline-markers.comments.fixme.color`: FIXME タグの色の変更。
+- `inline-markers.comments.tags`: ハイライトするコメントタグの定義。`{ tag, color, bold?, italic?, strikethrough?, underline? }` の配列で、配列順がマッチ優先度になります。語タグ（例: `TODO`）はサイドバーにも表示されます。
+- `inline-markers.comments.exclude`: コメントのハイライトとスキャンを無効化するファイルの glob パターン（既定: `**/*.md`, `**/*.mdx`）。
+- `inline-markers.comments.multilineComments`: ブロックコメント（`/* */`）と JSDoc（`/** */`）内のハイライトの有効/無効。
