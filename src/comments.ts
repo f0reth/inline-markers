@@ -154,6 +154,28 @@ function findJSDocComments(
   }
 }
 
+const FIXED_CONFIGS: Record<Key, { color: string; enabled: boolean }> = {
+  todo: { color: "", enabled: true },
+  fixme: { color: "", enabled: true },
+  important: { color: "", enabled: false },
+  question: { color: "", enabled: false },
+  highlight: { color: "", enabled: false },
+};
+
+export function parseDocument(doc: TextDocument, multilineComments: boolean): TagMatch[] {
+  const text = doc.getText();
+  const results: TagMatch[] = [];
+  const usedOffsets = new Set<number>();
+
+  findSingleLineComments(text, doc, results, FIXED_CONFIGS, usedOffsets);
+  if (multilineComments) {
+    findBlockComments(text, doc, results, FIXED_CONFIGS, usedOffsets);
+    findJSDocComments(text, doc, results, FIXED_CONFIGS, usedOffsets);
+  }
+
+  return results;
+}
+
 export function createBetterComments(context: ContextLike) {
   const tagDecorators = new Map<Key, TextEditorDecorationType>();
   const clearBackgroundDeco = window.createTextEditorDecorationType({
