@@ -1,6 +1,8 @@
 import * as assert from "node:assert";
 
-import { BLOCK_INNER_PATTERNS, SINGLE_LINE_PATTERNS, TRAIL_RE } from "../comments";
+import * as vscode from "vscode";
+
+import { BLOCK_INNER_PATTERNS, SINGLE_LINE_PATTERNS, TRAIL_RE, parseDocument } from "../comments";
 
 suite("TRAIL_RE — trailing block comment closer stripping", () => {
   test("strips trailing */", () => {
@@ -470,5 +472,48 @@ suite("BLOCK_INNER_PATTERNS", () => {
       assert.ok(m, "should match with no message");
       assert.strictEqual(m[1], "?");
     });
+  });
+});
+
+suite("parseDocument", () => {
+  test("empty document → returns empty array", async () => {
+    const doc = await vscode.workspace.openTextDocument({ content: "", language: "typescript" });
+    const result = parseDocument(doc, false);
+    assert.deepStrictEqual(result, []);
+  });
+
+  test("multilineComments: false → multiline block comment tags ignored", async () => {
+    const doc = await vscode.workspace.openTextDocument({
+      content: "/*\n * TODO: inside block\n */",
+      language: "typescript",
+    });
+    const result = parseDocument(doc, false);
+    assert.deepStrictEqual(result, []);
+  });
+
+  test("FIXED_CONFIGS: only todo and fixme enabled, others excluded", async () => {
+    const doc = await vscode.workspace.openTextDocument({
+      content: "// ! important\n// ? question\n// * highlight\n// TODO: task\n// FIXME: broken",
+      language: "typescript",
+    });
+    const result = parseDocument(doc, false);
+    const keys = result.map((r) => r.key);
+    assert.ok(!keys.includes("important"), "important should not be in results");
+    assert.ok(!keys.includes("question"), "question should not be in results");
+    assert.ok(!keys.includes("highlight"), "highlight should not be in results");
+    assert.ok(keys.includes("todo"), "todo should be in results");
+    assert.ok(keys.includes("fixme"), "fixme should be in results");
+  });
+
+  test("returned TagMatch has correct .key, .message, .range.start.line", async () => {
+    const doc = await vscode.workspace.openTextDocument({
+      content: "const x = 1;\n// TODO: fix this",
+      language: "typescript",
+    });
+    const result = parseDocument(doc, false);
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].key, "todo");
+    assert.strictEqual(result[0].message, "fix this");
+    assert.strictEqual(result[0].range.start.line, 1);
   });
 });
