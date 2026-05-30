@@ -298,3 +298,34 @@ suite("applyShift — multiple changes processed bottom-up", () => {
     assert.strictEqual(result[0].line, 5);
   });
 });
+
+suite("applyShift — edge cases", () => {
+  test("empty bookmarks array → returns empty array", () => {
+    const result = applyShift(
+      [],
+      [{ range: { start: { line: 0 }, end: { line: 0 } }, text: "a\nb" }],
+    );
+    assert.deepStrictEqual(result, []);
+  });
+
+  test("bookmark with label retains label after line shift", () => {
+    const bookmarks: Bookmark[] = [{ uri: URI_A, line: 5, label: "my note" }];
+    const result = applyShift(bookmarks, [
+      { range: { start: { line: 2 }, end: { line: 2 } }, text: "a\nb" },
+    ]);
+    assert.strictEqual(result[0].line, 7);
+    assert.strictEqual(result[0].label, "my note");
+  });
+
+  test("deletion and insertion in same change set: only deletion affects bookmark between them", () => {
+    const bookmarks: Bookmark[] = [{ uri: URI_A, line: 5 }];
+    const result = applyShift(bookmarks, [
+      { range: { start: { line: 1 }, end: { line: 3 } }, text: "" },
+      { range: { start: { line: 8 }, end: { line: 8 } }, text: "a\nb\nc" },
+    ]);
+    // Bottom-up: insertion at 8 processed first (bookmark at 5 not affected)
+    // Then deletion {1-3} shifts bookmark from 5 to 3 (delta = -2)
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].line, 3);
+  });
+});
