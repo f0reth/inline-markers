@@ -185,6 +185,7 @@ suite("BookmarkManager — API surface", () => {
     assert.strictEqual(typeof mgr.clearAll, "function");
     assert.strictEqual(typeof mgr.clearFile, "function");
     assert.strictEqual(typeof mgr.deleteBookmark, "function");
+    assert.strictEqual(typeof mgr.jump, "function");
     assert.strictEqual(typeof mgr.navigateNext, "function");
     assert.strictEqual(typeof mgr.navigatePrevious, "function");
     assert.strictEqual(typeof mgr.getBookmarkedLines, "function");

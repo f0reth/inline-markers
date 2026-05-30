@@ -2,12 +2,9 @@ import {
   DecorationOptions,
   DiagnosticSeverity,
   ExtensionContext,
-  Position,
   Range,
-  Selection,
   TextEditor,
   TextEditorDecorationType,
-  Uri,
   commands,
   languages,
   window,
@@ -241,10 +238,8 @@ export function activate(context: ExtensionContext) {
         await bookmarkManager.clearFile(uriStr);
       },
     ),
-    commands.registerCommand("inline-markers.bookmark._jump", async (bookmark: Bookmark) => {
-      await window.showTextDocument(Uri.parse(bookmark.uri), {
-        selection: new Selection(new Position(bookmark.line, 0), new Position(bookmark.line, 0)),
-      });
+    commands.registerCommand("inline-markers.bookmark._jump", (bookmark: Bookmark) => {
+      bookmarkManager.jump(bookmark);
     }),
   );
 

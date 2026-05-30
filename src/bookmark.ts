@@ -51,58 +51,73 @@ export function createBookmarkManager(context: BookmarkContext, onChanged: (uri?
     gutterIconSize: "80%",
   });
 
-  function load(): Bookmark[] {
-    return context.workspaceState.get<Bookmark[]>(STORAGE_KEY, []);
-  }
+  // single in-memory source of truth, loaded once; storage is kept in sync via persist()
+  let bookmarks: Bookmark[] = context.workspaceState.get<Bookmark[]>(STORAGE_KEY, []);
+  const index = new Map<string, Bookmark[]>(); // uri -> its bookmarks (avoids full scans)
+  // serializes workspaceState writes so rapid mutations can't interleave into a lost update
+  let writeChain: Promise<void> = Promise.resolve();
 
-  function persist(bookmarks: Bookmark[]): Thenable<void> {
-    return context.workspaceState.update(STORAGE_KEY, bookmarks);
+  function rebuildIndex(): void {
+    index.clear();
+    for (const b of bookmarks) {
+      const arr = index.get(b.uri);
+      if (arr) arr.push(b);
+      else index.set(b.uri, [b]);
+    }
+  }
+  rebuildIndex();
+
+  function persist(): Promise<void> {
+    const snapshot = bookmarks.slice();
+    const next = writeChain.then(() => context.workspaceState.update(STORAGE_KEY, snapshot));
+    // keep the chain progressing even if one write rejects, preserving write order
+    writeChain = next.then(
+      () => undefined,
+      () => undefined,
+    );
+    return next;
   }
 
   function updateDecorations(editor: TextEditor | undefined): void {
     if (!editor) return;
     const uriStr = editor.document.uri.toString();
-    const bookmarks = load();
-    const opts: DecorationOptions[] = bookmarks
-      .filter((b) => b.uri === uriStr)
-      .map((b) => ({ range: new Range(b.line, 0, b.line, 0) }));
+    const opts: DecorationOptions[] = (index.get(uriStr) ?? []).map((b) => ({
+      range: new Range(b.line, 0, b.line, 0),
+    }));
     editor.setDecorations(gutterDeco, opts);
   }
 
-  async function toggle(uriStr: string, line: number): Promise<void> {
-    const bookmarks = load();
-    const idx = bookmarks.findIndex((b) => b.uri === uriStr && b.line === line);
-    if (idx >= 0) {
-      bookmarks.splice(idx, 1);
-    } else {
-      bookmarks.push({ uri: uriStr, line });
-    }
-    await persist(bookmarks);
+  async function commit(uri?: string): Promise<void> {
+    rebuildIndex();
+    await persist();
     updateDecorations(window.activeTextEditor);
-    onChanged(uriStr);
+    onChanged(uri);
+  }
+
+  async function toggle(uriStr: string, line: number): Promise<void> {
+    const existing = index.get(uriStr)?.some((b) => b.line === line) ?? false;
+    bookmarks = existing
+      ? bookmarks.filter((b) => !(b.uri === uriStr && b.line === line))
+      : [...bookmarks, { uri: uriStr, line }];
+    await commit(uriStr);
   }
 
   async function clearAll(): Promise<void> {
-    await persist([]);
-    updateDecorations(window.activeTextEditor);
-    onChanged();
+    bookmarks = [];
+    await commit();
   }
 
   async function clearFile(uriStr: string): Promise<void> {
-    const bookmarks = load().filter((b) => b.uri !== uriStr);
-    await persist(bookmarks);
-    updateDecorations(window.activeTextEditor);
-    onChanged(uriStr);
+    bookmarks = bookmarks.filter((b) => b.uri !== uriStr);
+    await commit(uriStr);
   }
 
   async function deleteBookmark(bookmark: Bookmark): Promise<void> {
-    const bookmarks = load().filter((b) => !(b.uri === bookmark.uri && b.line === bookmark.line));
-    await persist(bookmarks);
-    updateDecorations(window.activeTextEditor);
-    onChanged(bookmark.uri);
+    bookmarks = bookmarks.filter((b) => !(b.uri === bookmark.uri && b.line === bookmark.line));
+    await commit(bookmark.uri);
   }
 
-  function _jump(bookmark: Bookmark): void {
+  function jump(bookmark: Bookmark): void {
     void window.showTextDocument(Uri.parse(bookmark.uri), {
       selection: new Selection(new Position(bookmark.line, 0), new Position(bookmark.line, 0)),
     });
@@ -111,53 +126,43 @@ export function createBookmarkManager(context: BookmarkContext, onChanged: (uri?
   function navigateNext(): void {
     const editor = window.activeTextEditor;
     if (!editor) return;
-    const uriStr = editor.document.uri.toString();
-    const fileBookmarks = load()
-      .filter((b) => b.uri === uriStr)
-      .toSorted((a, b) => a.line - b.line);
+    const fileBookmarks = (index.get(editor.document.uri.toString()) ?? []).toSorted(
+      (a, b) => a.line - b.line,
+    );
     if (fileBookmarks.length === 0) {
       void window.showInformationMessage("No bookmarks in this file.");
       return;
     }
     const currentLine = editor.selection.active.line;
-    const next = fileBookmarks.find((b) => b.line > currentLine) ?? fileBookmarks[0];
-    _jump(next);
+    jump(fileBookmarks.find((b) => b.line > currentLine) ?? fileBookmarks[0]);
   }
 
   function navigatePrevious(): void {
     const editor = window.activeTextEditor;
     if (!editor) return;
-    const uriStr = editor.document.uri.toString();
-    const fileBookmarks = load()
-      .filter((b) => b.uri === uriStr)
-      .toSorted((a, b) => b.line - a.line);
+    const fileBookmarks = (index.get(editor.document.uri.toString()) ?? []).toSorted(
+      (a, b) => b.line - a.line,
+    );
     if (fileBookmarks.length === 0) {
       void window.showInformationMessage("No bookmarks in this file.");
       return;
     }
     const currentLine = editor.selection.active.line;
-    const prev = fileBookmarks.find((b) => b.line < currentLine) ?? fileBookmarks[0];
-    _jump(prev);
+    jump(fileBookmarks.find((b) => b.line < currentLine) ?? fileBookmarks[0]);
   }
 
   function getBookmarkedLines(uri: Uri): Set<number> {
-    const uriStr = uri.toString();
-    return new Set(
-      load()
-        .filter((b) => b.uri === uriStr)
-        .map((b) => b.line),
-    );
+    return new Set((index.get(uri.toString()) ?? []).map((b) => b.line));
   }
 
   async function shiftBookmarks(uriStr: string, event: TextDocumentChangeEvent): Promise<void> {
-    const all = load();
-    const fileBookmarks = all.filter((b) => b.uri === uriStr);
-    const other = all.filter((b) => b.uri !== uriStr);
-
-    if (fileBookmarks.length === 0) return;
+    const fileBookmarks = index.get(uriStr);
+    if (!fileBookmarks || fileBookmarks.length === 0) return;
 
     const shifted = applyShift(fileBookmarks, event.contentChanges);
-    await persist([...other, ...shifted]);
+    bookmarks = bookmarks.filter((b) => b.uri !== uriStr).concat(shifted);
+    rebuildIndex();
+    await persist();
     updateDecorations(window.activeTextEditor);
   }
 
@@ -166,12 +171,13 @@ export function createBookmarkManager(context: BookmarkContext, onChanged: (uri?
   }
 
   return {
-    getBookmarks: load,
+    getBookmarks: () => bookmarks,
     updateDecorations,
     toggle,
     clearAll,
     clearFile,
     deleteBookmark,
+    jump,
     navigateNext,
     navigatePrevious,
     getBookmarkedLines,
