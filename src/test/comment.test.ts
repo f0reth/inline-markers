@@ -1,25 +1,6 @@
 import * as assert from "node:assert";
 
-// Mirrors TRAIL_RE from comments.ts for isolated testing
-const TRAIL_RE = /(?:\s*\*+\/|\s*-->)\s*$/;
-
-// Mirrors SINGLE_LINE_PATTERNS from comments.ts (no ^ anchor — matches inline comments)
-const SINGLE_LINE_PATTERNS = {
-  todo: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*((?:TODO|FIXME)\b[:-]?)[ \t]*(.*)/i,
-  fixme: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(FIXME\b[:-]?)[ \t]*(.*)/i,
-  important: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(!)(?=[ \t\n]|$)([ \t]*.*)/,
-  question: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(\?)(?=[ \t]|$)([ \t]*.*)/,
-  highlight: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(\*)(?=[ \t]|$)([ \t]*.*)/,
-};
-
-// Mirrors BLOCK_INNER_PATTERNS from comments.ts (applied inside multiline /* */ and /** */ blocks)
-const BLOCK_INNER_PATTERNS = {
-  todo: /^[ \t]*\*?[ \t]*((?:TODO|FIXME)\b[:-]?)\s*(.*)/im,
-  fixme: /^[ \t]*\*?[ \t]*(FIXME\b[:-]?)\s*(.*)/im,
-  important: /^[ \t]*\*?[ \t]*(!)(?=\s|$)\s*(.*)/m,
-  question: /^[ \t]*\*?[ \t]*(\?)(?=\s|$)\s*(.*)/m,
-  highlight: /^[ \t]*\*?[ \t]*(\*)(?=\s|$)\s*(.*)/m,
-};
+import { BLOCK_INNER_PATTERNS, SINGLE_LINE_PATTERNS, TRAIL_RE } from "../comments";
 
 suite("TRAIL_RE — trailing block comment closer stripping", () => {
   test("strips trailing */", () => {

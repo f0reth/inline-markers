@@ -19,7 +19,7 @@ const TAG_KEYS: CommentTagKey[] = ["important", "fixme", "todo", "question", "hi
 
 // single-line comment patterns (no ^ anchor — matches inline comments too)
 // \/\*+ handles single-line block comments like /* TODO: fix */
-const SINGLE_LINE_PATTERNS: Record<CommentTagKey, RegExp> = {
+export const SINGLE_LINE_PATTERNS: Record<CommentTagKey, RegExp> = {
   todo: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*((?:TODO|FIXME)\b[:-]?)[ \t]*(.*)/i,
   fixme: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(FIXME\b[:-]?)[ \t]*(.*)/i,
   important: /(?:\/\/|#|--|<!--|\/\*+)(?:[ \t*!?]*)[ \t]*(!)(?=[ \t\n]|$)([ \t]*.*)/,
@@ -28,7 +28,7 @@ const SINGLE_LINE_PATTERNS: Record<CommentTagKey, RegExp> = {
 };
 
 // block comment inner-line patterns (applied per-line inside /* */ and /** */ blocks)
-const BLOCK_INNER_PATTERNS: Record<CommentTagKey, RegExp> = {
+export const BLOCK_INNER_PATTERNS: Record<CommentTagKey, RegExp> = {
   todo: /^[ \t]*\*?[ \t]*((?:TODO|FIXME)\b[:-]?)\s*(.*)/im,
   fixme: /^[ \t]*\*?[ \t]*(FIXME\b[:-]?)\s*(.*)/im,
   important: /^[ \t]*\*?[ \t]*(!)(?=\s|$)\s*(.*)/m,
@@ -37,7 +37,7 @@ const BLOCK_INNER_PATTERNS: Record<CommentTagKey, RegExp> = {
 };
 
 // strips trailing block-comment closers (*/, -->) before storing the message text
-const TRAIL_RE = /(?:\s*\*+\/|\s*-->)\s*$/;
+export const TRAIL_RE = /(?:\s*\*+\/|\s*-->)\s*$/;
 
 type Key = CommentTagKey;
 export type TagMatch = { key: Key; message: string; range: Range; tagRange: Range };
