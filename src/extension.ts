@@ -37,7 +37,7 @@ export function activate(context: ExtensionContext) {
   const diagLine = createDiagnosticLine();
   context.subscriptions.push({ dispose: () => diagLine.dispose() });
 
-  const better = createBetterComments(context);
+  const better = createBetterComments();
 
   let onBookmarksChanged: (uri?: string) => void = (_uri) => {
     void context;
@@ -71,6 +71,7 @@ export function activate(context: ExtensionContext) {
   ];
 
   let gutterEnabled = true;
+  let diagLineEnabled = true;
 
   const severityMap = new Map<DiagnosticSeverity, DecorationOptions[]>([
     [DiagnosticSeverity.Error, []],
@@ -83,8 +84,9 @@ export function activate(context: ExtensionContext) {
   function updateSettings() {
     const config = workspace.getConfiguration("inline-markers");
     gutterEnabled = config.get("gutter.enabled", true);
+    diagLineEnabled = config.get("diagnosticLine.enabled", true);
     diagLine.updateSettings({
-      showLine: config.get("diagnosticLine.enabled", true),
+      showLine: diagLineEnabled,
       errorLabelBg: config.get("diagnosticLine.errorLabelBg", "#d32f2f88"),
       warnLabelBg: config.get("diagnosticLine.warnLabelBg", "#ff980088"),
       errFontColor: config.get("diagnosticLine.errFontColor", "#efefef"),
@@ -108,20 +110,24 @@ export function activate(context: ExtensionContext) {
       if (!bookmarkedLines.has(d.range.start.line)) {
         severityMap.get(d.severity)?.push({ range: d.range, hoverMessage: d.message });
       }
-      const lineEnd = editor.document.lineAt(d.range.start.line).range.end;
-      lineOptions.push({
-        severity: d.severity,
-        message: d.message,
-        range: new Range(lineEnd, lineEnd),
-      });
+      if (diagLineEnabled) {
+        const lineEnd = editor.document.lineAt(d.range.start.line).range.end;
+        lineOptions.push({
+          severity: d.severity,
+          message: d.message,
+          range: new Range(lineEnd, lineEnd),
+        });
+      }
     }
 
     for (const [gutter, severity] of gutterPairs) {
       editor.setDecorations(gutter, gutterEnabled ? severityMap.get(severity)! : EMPTY_DECO_OPTS);
     }
 
-    diagLine.updateForTextDocument(editor.document.uri, lineOptions);
-    diagLine.showLineDecoratorForDocument(editor.document.uri);
+    if (diagLineEnabled) {
+      diagLine.updateForTextDocument(editor.document.uri, lineOptions);
+      diagLine.showLineDecoratorForDocument(editor.document.uri);
+    }
   }
 
   function updateAll(editor: TextEditor | undefined) {
@@ -155,9 +161,11 @@ export function activate(context: ExtensionContext) {
     }),
     workspace.onDidChangeTextDocument((e) => {
       if (e.document === window.activeTextEditor?.document) scheduleUpdate();
+      void bookmarkManager.shiftBookmarks(e.document.uri.toString(), e);
     }),
-    workspace.onDidChangeTextDocument(async (e) => {
-      await bookmarkManager.shiftBookmarks(e.document.uri.toString(), e);
+    workspace.onDidCloseTextDocument((doc) => {
+      better.removeForDocument(doc.uri);
+      diagLine.removeForTextDocument(doc.uri);
     }),
     workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("inline-markers")) {
@@ -165,7 +173,8 @@ export function activate(context: ExtensionContext) {
         scheduleUpdate(true);
       }
       if (
-        e.affectsConfiguration("inline-markers.comments.excludeLanguages") ||
+        e.affectsConfiguration("inline-markers.comments.tags") ||
+        e.affectsConfiguration("inline-markers.comments.exclude") ||
         e.affectsConfiguration("inline-markers.comments.multilineComments")
       ) {
         void markersTreeProvider.refreshAll();
@@ -181,11 +190,15 @@ export function activate(context: ExtensionContext) {
     }),
     workspace.onDidDeleteFiles((e) => {
       for (const file of e.files) {
+        better.removeForDocument(file);
+        diagLine.removeForTextDocument(file);
         markersTreeProvider.removeComment(file.toString());
       }
     }),
     workspace.onDidRenameFiles((e) => {
       for (const { oldUri, newUri } of e.files) {
+        better.removeForDocument(oldUri);
+        diagLine.removeForTextDocument(oldUri);
         markersTreeProvider.removeComment(oldUri.toString());
         markersTreeProvider.refreshComments(newUri.toString());
       }

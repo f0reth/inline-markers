@@ -1,3 +1,5 @@
+import { TextDecoder } from "node:util";
+
 import {
   Event,
   EventEmitter,
@@ -11,8 +13,16 @@ import {
   workspace,
 } from "vscode";
 
-import { parseDocument, TagMatch } from "./comments";
+import { compileMatcher, globToRegExp, isExcluded, Matcher, scanText } from "./comment-scanner";
+import { DEFAULT_EXCLUDE, DEFAULT_TAGS } from "./configurations";
 import { Bookmark } from "./types";
+
+// A scanned word-tag comment, reduced to what the tree needs (the tag token drives the icon).
+export interface CommentEntry {
+  tag: string;
+  message: string;
+  line: number;
+}
 
 export type SectionTreeItem = TreeItem & {
   readonly kind: "section";
@@ -91,7 +101,7 @@ export type CommentItemTreeItem = TreeItem & {
   readonly kind: "commentItem";
 };
 export function createCommentItemTreeItem(
-  match: TagMatch,
+  entry: CommentEntry,
   uri: string,
   label: string,
 ): CommentItemTreeItem {
@@ -99,18 +109,18 @@ export function createCommentItemTreeItem(
     kind: "commentItem" as const,
   });
   item.contextValue = "commentItem";
-  if (match.key === "fixme") {
+  const upper = entry.tag.toUpperCase();
+  if (upper.startsWith("FIX") || upper.startsWith("BUG")) {
     item.iconPath = new ThemeIcon("warning", new ThemeColor("list.warningForeground"));
   } else {
     item.iconPath = new ThemeIcon("check-circle");
   }
-  const { line } = match.range.start;
   item.command = {
     command: "vscode.open",
     title: "Open",
     arguments: [
       Uri.parse(uri),
-      { selection: new Range(new Position(line, 0), new Position(line, 0)) },
+      { selection: new Range(new Position(entry.line, 0), new Position(entry.line, 0)) },
     ],
   };
   return item;
@@ -134,67 +144,138 @@ export type MarkersTreeProvider = {
   refreshAll(): Promise<void>;
 };
 
+interface ScanConfig {
+  matcher: Matcher;
+  multiline: boolean;
+  excludeRes: RegExp[];
+  excludeGlobs: string[];
+}
+
+function readScanConfig(): ScanConfig {
+  const config = workspace.getConfiguration("inline-markers.comments");
+  const tags = config.get("tags", DEFAULT_TAGS);
+  const multiline = config.get("multilineComments", true);
+  const excludeGlobs = config.get("exclude", DEFAULT_EXCLUDE);
+  return {
+    matcher: compileMatcher(tags),
+    multiline,
+    excludeRes: excludeGlobs.map(globToRegExp),
+    excludeGlobs,
+  };
+}
+
 function _getTreeItem(element: MarkersTreeNode): TreeItem {
   return element;
 }
 
+// max number of files scanned concurrently during a full refresh
+const SCAN_CONCURRENCY = 24;
+
 export function createMarkersTreeProvider(getBookmarks: () => Bookmark[]): MarkersTreeProvider {
   const _onDidChangeTreeData = new EventEmitter<undefined>();
   const onDidChangeTreeData: Event<undefined> = _onDidChangeTreeData.event;
-  const commentCache = new Map<string, TagMatch[]>();
+  const commentCache = new Map<string, CommentEntry[]>();
   const lineCache = new Map<string, Map<number, string>>();
+  const decoder = new TextDecoder();
   let _visible = false;
   let _dirty = true;
+  let _scanning = false;
+  let _rescan = false;
 
-  async function _scanFileWithConfig(
-    uri: string,
-    multilineComments: boolean,
-    excludeLanguages: string[],
-  ): Promise<void> {
+  // prefers an already-open document (reflects unsaved edits, avoids opening new editors and
+  // the language-server side effects that openTextDocument triggers); falls back to raw bytes.
+  async function _readText(uri: string): Promise<string | undefined> {
+    const open = workspace.textDocuments.find((d) => d.uri.toString() === uri);
+    if (open) return open.getText();
     try {
-      const doc = await workspace.openTextDocument(Uri.parse(uri));
-      if (excludeLanguages.includes(doc.languageId)) return;
-      const matches = parseDocument(doc, multilineComments);
-      if (matches.length > 0) {
-        commentCache.set(uri, matches);
-      } else {
-        commentCache.delete(uri);
-      }
+      return decoder.decode(await workspace.fs.readFile(Uri.parse(uri)));
     } catch {
-      // File unavailable
+      return undefined;
     }
+  }
+
+  function _toEntries(text: string, cfg: ScanConfig): CommentEntry[] {
+    const entries: CommentEntry[] = [];
+    for (const m of scanText(text, cfg.matcher, cfg.multiline)) {
+      if (!cfg.matcher.isWord[m.tagIndex]) continue; // tree lists word tags only (TODO/FIXME)
+      entries.push({
+        tag: cfg.matcher.tags[m.tagIndex].tag,
+        message: m.message,
+        line: m.range.startLine,
+      });
+    }
+    return entries;
+  }
+
+  async function _scanFileInto(uri: string, cfg: ScanConfig): Promise<void> {
+    if (isExcluded(Uri.parse(uri).path, cfg.excludeRes)) {
+      commentCache.delete(uri);
+      return;
+    }
+    const text = await _readText(uri);
+    if (text === undefined) return;
+    const entries = _toEntries(text, cfg);
+    if (entries.length > 0) commentCache.set(uri, entries);
+    else commentCache.delete(uri);
   }
 
   async function _scanFile(uri: string): Promise<void> {
-    const multilineComments = workspace
-      .getConfiguration("inline-markers.comments")
-      .get("multilineComments", true);
-    const excludeLanguages = workspace
-      .getConfiguration("inline-markers.comments")
-      .get("excludeLanguages", ["markdown", "mdx"]);
-    await _scanFileWithConfig(uri, multilineComments, excludeLanguages);
+    await _scanFileInto(uri, readScanConfig());
   }
 
   async function _loadBookmarkUri(uri: string): Promise<void> {
-    try {
-      const doc = await workspace.openTextDocument(Uri.parse(uri));
-      const lineMap = new Map<number, string>();
-      for (let i = 0; i < doc.lineCount; i++) {
-        lineMap.set(i, doc.lineAt(i).text.trim());
-      }
-      lineCache.set(uri, lineMap);
-    } catch {
-      // File unavailable
+    const lines = getBookmarks()
+      .filter((b) => b.uri === uri)
+      .map((b) => b.line);
+    if (lines.length === 0) {
+      lineCache.delete(uri);
+      return;
     }
+    const text = await _readText(uri);
+    if (text === undefined) {
+      lineCache.delete(uri);
+      return;
+    }
+    const allLines = text.split(/\r?\n/);
+    const lineMap = new Map<number, string>();
+    for (const line of lines) {
+      if (line >= 0 && line < allLines.length) lineMap.set(line, allLines[line].trim());
+    }
+    lineCache.set(uri, lineMap);
   }
 
   async function _reloadAllBookmarks(): Promise<void> {
-    const bookmarks = getBookmarks();
-    const uris = new Set(bookmarks.map((b) => b.uri));
+    const uris = new Set(getBookmarks().map((b) => b.uri));
     lineCache.clear();
     for (const uri of uris) {
       await _loadBookmarkUri(uri);
     }
+  }
+
+  async function _doRefreshAll(): Promise<void> {
+    const cfg = readScanConfig();
+
+    const searchExclude = workspace
+      .getConfiguration("search")
+      .get<Record<string, boolean>>("exclude", {});
+    const searchKeys = Object.entries(searchExclude)
+      .filter(([, v]) => v)
+      .map(([k]) => k);
+
+    const allExcludes = [...cfg.excludeGlobs, ...searchKeys];
+    const excludeGlob = allExcludes.length > 0 ? `{${allExcludes.join(",")}}` : undefined;
+    const files = await workspace.findFiles("**/*", excludeGlob);
+
+    commentCache.clear();
+    for (let i = 0; i < files.length; i += SCAN_CONCURRENCY) {
+      const chunk = files.slice(i, i + SCAN_CONCURRENCY);
+      await Promise.all(chunk.map((f) => _scanFileInto(f.toString(), cfg)));
+    }
+
+    await _reloadAllBookmarks();
+
+    _dirty = false;
+    _onDidChangeTreeData.fire(undefined);
   }
 
   async function refreshAll(): Promise<void> {
@@ -202,33 +283,20 @@ export function createMarkersTreeProvider(getBookmarks: () => Bookmark[]): Marke
       _onDidChangeTreeData.fire(undefined);
       return;
     }
-
-    const searchExclude = workspace
-      .getConfiguration("search")
-      .get<Record<string, boolean>>("exclude", {});
-    const excludeKeys = Object.entries(searchExclude)
-      .filter(([, v]) => v)
-      .map(([k]) => k);
-    const excludeGlob = excludeKeys.length > 0 ? `{${excludeKeys.join(",")}}` : undefined;
-
-    const files = await workspace.findFiles("**/*", excludeGlob);
-    const multilineComments = workspace
-      .getConfiguration("inline-markers.comments")
-      .get("multilineComments", true);
-    const excludeLanguages = workspace
-      .getConfiguration("inline-markers.comments")
-      .get("excludeLanguages", ["markdown", "mdx"]);
-
-    commentCache.clear();
-
-    for (const file of files) {
-      await _scanFileWithConfig(file.toString(), multilineComments, excludeLanguages);
+    // guard against overlapping full scans: a call made while scanning queues exactly one rerun
+    if (_scanning) {
+      _rescan = true;
+      return;
     }
-
-    await _reloadAllBookmarks();
-
-    _dirty = false;
-    _onDidChangeTreeData.fire(undefined);
+    _scanning = true;
+    try {
+      do {
+        _rescan = false;
+        await _doRefreshAll();
+      } while (_rescan);
+    } finally {
+      _scanning = false;
+    }
   }
 
   function setVisible(v: boolean): void {
@@ -311,7 +379,7 @@ export function createMarkersTreeProvider(getBookmarks: () => Bookmark[]): Marke
 
   function _getCommentFiles(): MarkersTreeNode[] {
     if (commentCache.size === 0) {
-      return [createPlaceholderTreeItem("No TODO/FIXME found")];
+      return [createPlaceholderTreeItem("No comments found")];
     }
     const uris = [...commentCache.keys()].toSorted();
     return uris.map((uri) => {
@@ -322,20 +390,19 @@ export function createMarkersTreeProvider(getBookmarks: () => Bookmark[]): Marke
   }
 
   function _getCommentItems(uri: string): MarkersTreeNode[] {
-    const matches = commentCache.get(uri) ?? [];
-    return matches
-      .toSorted((a, b) => a.range.start.line - b.range.start.line)
-      .map((match) => {
-        const label = `L${match.range.start.line + 1}: ${match.message}`;
-        return createCommentItemTreeItem(match, uri, label);
-      });
+    const entries = commentCache.get(uri) ?? [];
+    return entries
+      .toSorted((a, b) => a.line - b.line)
+      .map((entry) =>
+        createCommentItemTreeItem(entry, uri, `L${entry.line + 1}: ${entry.message}`),
+      );
   }
 
   function getChildren(element?: MarkersTreeNode): MarkersTreeNode[] {
     if (!element) {
       return [
         createSectionTreeItem("Bookmarks", "bookmarks"),
-        createSectionTreeItem("TODO / FIXME", "comments"),
+        createSectionTreeItem("Comments", "comments"),
       ];
     }
 

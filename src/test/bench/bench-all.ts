@@ -24,7 +24,7 @@ export async function runAllBench() {
     asAbsolutePath: (p: string) => vscode.Uri.joinPath(ext.extensionUri, p).fsPath,
   };
 
-  const better = createBetterComments(context);
+  const better = createBetterComments();
   const gutter = createGutterDecorators(context);
   const diagLine = createDiagnosticLine();
   diagLine.updateSettings({

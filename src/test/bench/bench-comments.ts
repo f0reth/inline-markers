@@ -20,11 +20,8 @@ function makeSource(lines: number): string {
 export async function runCommentsBench() {
   const ext = vscode.extensions.getExtension("f0reth.inline-markers")!;
   await ext.activate();
-  const context = {
-    asAbsolutePath: (p: string) => vscode.Uri.joinPath(ext.extensionUri, p).fsPath,
-  };
 
-  const better = createBetterComments(context);
+  const better = createBetterComments();
   const results: BenchResult[] = [];
 
   for (const lineCount of [100, 1000, 10000]) {

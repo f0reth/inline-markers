@@ -1,101 +1,58 @@
 import * as assert from "node:assert";
 
-import { DEFAULTS } from "../configurations";
+import { isWordTag } from "../comment-scanner";
+import { DEFAULT_EXCLUDE, DEFAULT_TAGS } from "../configurations";
 
-suite("Configurations", () => {
-  test("DEFAULTS colors are correct", () => {
-    assert.strictEqual(DEFAULTS.todo.color, "#FF8C00");
-    assert.strictEqual(DEFAULTS.fixme.color, "#FFB6C1");
-    assert.strictEqual(DEFAULTS.important.color, "#FF2D00");
-    assert.strictEqual(DEFAULTS.question.color, "#3498DB");
-    assert.strictEqual(DEFAULTS.highlight.color, "#98C379");
+suite("Configurations — DEFAULT_TAGS", () => {
+  test("default tags and colors match the documented set, in priority order", () => {
+    assert.deepStrictEqual(
+      DEFAULT_TAGS.map((t) => [t.tag, t.color]),
+      [
+        ["TODO", "#FF8C00"],
+        ["FIXME", "#FFB6C1"],
+        ["!", "#FF2D00"],
+        ["?", "#3498DB"],
+        ["*", "#98C379"],
+      ],
+    );
   });
 
-  test("all tags default to enabled", () => {
-    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
-    for (const key of keys) {
-      assert.strictEqual(DEFAULTS[key].enabled, true, `${key} should default to enabled`);
-    }
+  test("has exactly 5 tags", () => {
+    assert.strictEqual(DEFAULT_TAGS.length, 5);
   });
 
-  test("all tags reference an SVG gutter icon", () => {
-    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
-    for (const key of keys) {
-      assert.ok(
-        DEFAULTS[key].gutterIcon.endsWith(".svg"),
-        `${key}.gutterIcon should be an SVG path`,
-      );
-    }
-  });
-
-  test("all tags have hex-format colors", () => {
+  test("all colors are hex format", () => {
     const hexRe = /^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/;
-    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
-    for (const key of keys) {
-      assert.ok(hexRe.test(DEFAULTS[key].color), `${key}.color should be hex format`);
+    for (const t of DEFAULT_TAGS) {
+      assert.ok(hexRe.test(t.color), `${t.tag} color should be hex format`);
     }
   });
 
-  test("all tags have gutterIcon starting with images/", () => {
-    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
-    for (const key of keys) {
-      assert.ok(
-        DEFAULTS[key].gutterIcon.startsWith("images/"),
-        `${key}.gutterIcon should start with "images/"`,
-      );
+  test("tag tokens are unique", () => {
+    const tokens = DEFAULT_TAGS.map((t) => t.tag);
+    assert.strictEqual(new Set(tokens).size, tokens.length);
+  });
+
+  test("style flags are undefined by default (decoration falls back to plain color)", () => {
+    for (const t of DEFAULT_TAGS) {
+      assert.strictEqual(t.bold, undefined);
+      assert.strictEqual(t.italic, undefined);
+      assert.strictEqual(t.strikethrough, undefined);
+      assert.strictEqual(t.underline, undefined);
     }
   });
 
-  test("all tags have unique gutterIcon paths", () => {
-    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
-    const icons = keys.map((k) => DEFAULTS[k].gutterIcon);
-    assert.strictEqual(new Set(icons).size, icons.length);
+  test("TODO and FIXME are word tags; !, ?, * are symbol tags", () => {
+    assert.strictEqual(isWordTag("TODO"), true);
+    assert.strictEqual(isWordTag("FIXME"), true);
+    assert.strictEqual(isWordTag("!"), false);
+    assert.strictEqual(isWordTag("?"), false);
+    assert.strictEqual(isWordTag("*"), false);
   });
+});
 
-  test("DEFAULTS has exactly 5 keys", () => {
-    assert.strictEqual(Object.keys(DEFAULTS).length, 5);
-  });
-
-  test("DEFAULTS contains all expected CommentTagKeys", () => {
-    const expected = ["todo", "fixme", "important", "question", "highlight"];
-    for (const key of expected) {
-      assert.ok(key in DEFAULTS, `"${key}" should be in DEFAULTS`);
-    }
-  });
-
-  test("all tags default bold to false", () => {
-    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
-    for (const key of keys) {
-      assert.strictEqual(DEFAULTS[key].bold, false, `${key}.bold should default to false`);
-    }
-  });
-
-  test("all tags default italic to false", () => {
-    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
-    for (const key of keys) {
-      assert.strictEqual(DEFAULTS[key].italic, false, `${key}.italic should default to false`);
-    }
-  });
-
-  test("all tags default strikethrough to false", () => {
-    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
-    for (const key of keys) {
-      assert.strictEqual(
-        DEFAULTS[key].strikethrough,
-        false,
-        `${key}.strikethrough should default to false`,
-      );
-    }
-  });
-
-  test("all tags default underline to false", () => {
-    const keys = ["todo", "fixme", "important", "question", "highlight"] as const;
-    for (const key of keys) {
-      assert.strictEqual(
-        DEFAULTS[key].underline,
-        false,
-        `${key}.underline should default to false`,
-      );
-    }
+suite("Configurations — DEFAULT_EXCLUDE", () => {
+  test("excludes markdown by default", () => {
+    assert.deepStrictEqual(DEFAULT_EXCLUDE, ["**/*.md", "**/*.mdx"]);
   });
 });

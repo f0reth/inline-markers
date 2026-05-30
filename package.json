@@ -1,7 +1,7 @@
 {
   "name": "inline-markers",
   "displayName": "Inline Markers",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "",
   "categories": [
     "Other"
@@ -184,166 +184,73 @@
           "default": 120,
           "description": "Maximum length of diagnostic messages."
         },
-        "inline-markers.comments.excludeLanguages": {
+        "inline-markers.comments.tags": {
+          "type": "array",
+          "default": [
+            {
+              "tag": "TODO",
+              "color": "#FF8C00"
+            },
+            {
+              "tag": "FIXME",
+              "color": "#FFB6C1"
+            },
+            {
+              "tag": "!",
+              "color": "#FF2D00"
+            },
+            {
+              "tag": "?",
+              "color": "#3498DB"
+            },
+            {
+              "tag": "*",
+              "color": "#98C379"
+            }
+          ],
+          "items": {
+            "type": "object",
+            "required": [
+              "tag",
+              "color"
+            ],
+            "properties": {
+              "tag": {
+                "type": "string"
+              },
+              "color": {
+                "type": "string"
+              },
+              "bold": {
+                "type": "boolean",
+                "default": false
+              },
+              "italic": {
+                "type": "boolean",
+                "default": false
+              },
+              "strikethrough": {
+                "type": "boolean",
+                "default": false
+              },
+              "underline": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          },
+          "description": "Comment tags to highlight. Order defines match priority (earlier wins). Word tags (e.g. TODO) also appear in the Markers sidebar."
+        },
+        "inline-markers.comments.exclude": {
           "type": "array",
           "items": {
             "type": "string"
           },
           "default": [
-            "markdown",
-            "mdx"
+            "**/*.md",
+            "**/*.mdx"
           ],
-          "description": "List of language IDs where comment tag highlighting is disabled (e.g. markdown, mdx)."
-        },
-        "inline-markers.comments.todo.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable TODO comment tags."
-        },
-        "inline-markers.comments.todo.color": {
-          "type": "string",
-          "default": "#FF8C00",
-          "description": "Color for TODO comment tags."
-        },
-        "inline-markers.comments.todo.bold": {
-          "type": "boolean",
-          "default": false,
-          "description": "Bold font for TODO comment tags."
-        },
-        "inline-markers.comments.todo.italic": {
-          "type": "boolean",
-          "default": false,
-          "description": "Italic font for TODO comment tags."
-        },
-        "inline-markers.comments.todo.strikethrough": {
-          "type": "boolean",
-          "default": false,
-          "description": "Strikethrough decoration for TODO comment tags."
-        },
-        "inline-markers.comments.todo.underline": {
-          "type": "boolean",
-          "default": false,
-          "description": "Underline decoration for TODO comment tags."
-        },
-        "inline-markers.comments.fixme.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable FIXME comment tags."
-        },
-        "inline-markers.comments.fixme.color": {
-          "type": "string",
-          "default": "#FFB6C1",
-          "description": "Color for FIXME comment tags."
-        },
-        "inline-markers.comments.fixme.bold": {
-          "type": "boolean",
-          "default": false,
-          "description": "Bold font for FIXME comment tags."
-        },
-        "inline-markers.comments.fixme.italic": {
-          "type": "boolean",
-          "default": false,
-          "description": "Italic font for FIXME comment tags."
-        },
-        "inline-markers.comments.fixme.strikethrough": {
-          "type": "boolean",
-          "default": false,
-          "description": "Strikethrough decoration for FIXME comment tags."
-        },
-        "inline-markers.comments.fixme.underline": {
-          "type": "boolean",
-          "default": false,
-          "description": "Underline decoration for FIXME comment tags."
-        },
-        "inline-markers.comments.important.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable IMPORTANT comment tags."
-        },
-        "inline-markers.comments.important.color": {
-          "type": "string",
-          "default": "#FF2D00",
-          "description": "Color for IMPORTANT comment tags."
-        },
-        "inline-markers.comments.important.bold": {
-          "type": "boolean",
-          "default": false,
-          "description": "Bold font for IMPORTANT comment tags."
-        },
-        "inline-markers.comments.important.italic": {
-          "type": "boolean",
-          "default": false,
-          "description": "Italic font for IMPORTANT comment tags."
-        },
-        "inline-markers.comments.important.strikethrough": {
-          "type": "boolean",
-          "default": false,
-          "description": "Strikethrough decoration for IMPORTANT comment tags."
-        },
-        "inline-markers.comments.important.underline": {
-          "type": "boolean",
-          "default": false,
-          "description": "Underline decoration for IMPORTANT comment tags."
-        },
-        "inline-markers.comments.question.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable QUESTION comment tags."
-        },
-        "inline-markers.comments.question.color": {
-          "type": "string",
-          "default": "#3498DB",
-          "description": "Color for QUESTION comment tags."
-        },
-        "inline-markers.comments.question.bold": {
-          "type": "boolean",
-          "default": false,
-          "description": "Bold font for QUESTION comment tags."
-        },
-        "inline-markers.comments.question.italic": {
-          "type": "boolean",
-          "default": false,
-          "description": "Italic font for QUESTION comment tags."
-        },
-        "inline-markers.comments.question.strikethrough": {
-          "type": "boolean",
-          "default": false,
-          "description": "Strikethrough decoration for QUESTION comment tags."
-        },
-        "inline-markers.comments.question.underline": {
-          "type": "boolean",
-          "default": false,
-          "description": "Underline decoration for QUESTION comment tags."
-        },
-        "inline-markers.comments.highlight.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable HIGHLIGHT comment tags."
-        },
-        "inline-markers.comments.highlight.color": {
-          "type": "string",
-          "default": "#98C379",
-          "description": "Color for HIGHLIGHT comment tags."
-        },
-        "inline-markers.comments.highlight.bold": {
-          "type": "boolean",
-          "default": false,
-          "description": "Bold font for HIGHLIGHT comment tags."
-        },
-        "inline-markers.comments.highlight.italic": {
-          "type": "boolean",
-          "default": false,
-          "description": "Italic font for HIGHLIGHT comment tags."
-        },
-        "inline-markers.comments.highlight.strikethrough": {
-          "type": "boolean",
-          "default": false,
-          "description": "Strikethrough decoration for HIGHLIGHT comment tags."
-        },
-        "inline-markers.comments.highlight.underline": {
-          "type": "boolean",
-          "default": false,
-          "description": "Underline decoration for HIGHLIGHT comment tags."
+          "description": "Glob patterns of files where comment tag highlighting and scanning are disabled."
         },
         "inline-markers.comments.multilineComments": {
           "type": "boolean",

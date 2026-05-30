@@ -1,59 +1,16 @@
-import { CommentTagKey } from "./types";
+import { TagConfig } from "./types";
 
-export interface DefaultEntry {
-  color: string;
-  gutterIcon: string;
-  enabled: boolean;
-  bold: boolean;
-  italic: boolean;
-  strikethrough: boolean;
-  underline: boolean;
-}
+// Fallback defaults for `inline-markers.comments.tags` — mirrors the package.json default.
+// Order defines match priority (earlier wins). Word tags (TODO, FIXME) also appear in the
+// sidebar tree; symbol tags (!, ?, *) are decoration-only.
+export const DEFAULT_TAGS: TagConfig[] = [
+  { tag: "TODO", color: "#FF8C00" },
+  { tag: "FIXME", color: "#FFB6C1" },
+  { tag: "!", color: "#FF2D00" },
+  { tag: "?", color: "#3498DB" },
+  { tag: "*", color: "#98C379" },
+];
 
-export const DEFAULTS: Record<CommentTagKey, DefaultEntry> = {
-  todo: {
-    color: "#FF8C00",
-    gutterIcon: "images/todo.svg",
-    enabled: true,
-    bold: false,
-    italic: false,
-    strikethrough: false,
-    underline: false,
-  },
-  fixme: {
-    color: "#FFB6C1",
-    gutterIcon: "images/error.svg",
-    enabled: true,
-    bold: false,
-    italic: false,
-    strikethrough: false,
-    underline: false,
-  },
-  important: {
-    color: "#FF2D00",
-    gutterIcon: "images/important.svg",
-    enabled: true,
-    bold: false,
-    italic: false,
-    strikethrough: false,
-    underline: false,
-  },
-  question: {
-    color: "#3498DB",
-    gutterIcon: "images/question.svg",
-    enabled: true,
-    bold: false,
-    italic: false,
-    strikethrough: false,
-    underline: false,
-  },
-  highlight: {
-    color: "#98C379",
-    gutterIcon: "images/highlight.svg",
-    enabled: true,
-    bold: false,
-    italic: false,
-    strikethrough: false,
-    underline: false,
-  },
-};
+// Fallback for `inline-markers.comments.exclude` — glob patterns where highlighting and
+// scanning are disabled.
+export const DEFAULT_EXCLUDE: string[] = ["**/*.md", "**/*.mdx"];
