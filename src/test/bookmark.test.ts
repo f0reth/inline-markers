@@ -311,7 +311,7 @@ suite("applyShift — edge cases", () => {
   test("bookmark with label retains label after line shift", () => {
     const bookmarks: Bookmark[] = [{ uri: URI_A, line: 5, label: "my note" }];
     const result = applyShift(bookmarks, [
-      { range: { start: { line: 2 }, end: { line: 2 } }, text: "a\nb" },
+      { range: { start: { line: 2 }, end: { line: 2 } }, text: "a\nb\nc" },
     ]);
     assert.strictEqual(result[0].line, 7);
     assert.strictEqual(result[0].label, "my note");
