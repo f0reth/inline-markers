@@ -44,17 +44,17 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "inline-markers-bookmarks",
-          "title": "Bookmarks",
-          "icon": "images/bookmark-sidebar.svg"
+          "id": "inline-markers",
+          "title": "Inline Markers",
+          "icon": "images/markers-sidebar.svg"
         }
       ]
     },
     "views": {
-      "inline-markers-bookmarks": [
+      "inline-markers": [
         {
-          "id": "inline-markers.bookmarks",
-          "name": "Bookmarks"
+          "id": "inline-markers.markers",
+          "name": "Markers"
         }
       ]
     },
@@ -89,6 +89,12 @@
         "command": "inline-markers.bookmark.clearFile",
         "title": "Clear File Bookmarks",
         "category": "Inline Markers"
+      },
+      {
+        "command": "inline-markers.markers.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Inline Markers"
       }
     ],
     "keybindings": [
@@ -114,6 +120,13 @@
       }
     ],
     "menus": {
+      "view/title": [
+        {
+          "command": "inline-markers.markers.refresh",
+          "when": "view == inline-markers.markers",
+          "group": "navigation"
+        }
+      ],
       "editor/context": [
         {
           "command": "inline-markers.bookmark.toggle",
@@ -341,8 +354,7 @@
     }
   },
   "activationEvents": [
-    "onLanguage",
-    "onView:inline-markers.bookmarks"
+    "onLanguage"
   ],
   "engines": {
     "vscode": "^1.115.0"
